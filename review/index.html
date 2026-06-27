@@ -205,38 +205,7 @@
   </div>
 
   <div class="tab-content" id="tabManage">
-    <div class="form-box" id="aiFillBox" style="border-left:3px solid var(--primary)">
-      <h3>🤖 智能补充知识点</h3>
-      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px">AI 根据教材信息自动生成知识点（仅管理员可用）</p>
-      <div style="margin-bottom:12px">
-        <label>DeepSeek API Key</label>
-        <div style="display:flex;gap:6px">
-          <input id="aiApiKey" type="password" placeholder="sk-..." style="flex:1">
-          <button onclick="saveAiKey()" style="padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap">保存</button>
-        </div>
-        <p style="font-size:11px;color:var(--text-light);margin-top:4px">Key 仅保存在本地浏览器</p>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div>
-          <label>出版社</label>
-          <input id="aiPublisher" placeholder="例如：人教版">
-        </div>
-        <div>
-          <label>年级</label>
-          <input id="aiGrade" placeholder="例如：高一 / 三年级">
-        </div>
-        <div>
-          <label>科目</label>
-          <input id="aiSubject" placeholder="例如：数学">
-        </div>
-        <div>
-          <label>单元</label>
-          <input id="aiUnit" placeholder="例如：第二章 函数">
-        </div>
-      </div>
-      <button onclick="aiSearchKnowledge()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--primary);color:white;font-size:15px;font-weight:600;cursor:pointer">🔍 搜索并生成知识点</button>
-      <div id="aiResultArea" style="margin-top:12px;display:none"></div>
-    </div>
+
 
     <div class="form-box" id="addFormBox">
       <h3>✏️ 手动添加知识点</h3>
@@ -447,21 +416,13 @@ function finalizeLogin() {
 function setupUIPermissions() {
   const addFormBox = document.getElementById('addFormBox');
   const importExportBar = document.getElementById('importExportBar');
-  const aiFillBox = document.getElementById('aiFillBox');
   if (isAdmin) {
     addFormBox.style.display = 'block';
     importExportBar.style.display = 'flex';
-    if (aiFillBox) {
-      aiFillBox.style.display = 'block';
-      // 自动填充已保存的 Key
-      const keyInput = document.getElementById('aiApiKey');
-      const savedKey = localStorage.getItem('aiDeepSeekKey');
-      if (keyInput && savedKey) keyInput.value = savedKey;
-    }
   } else {
     addFormBox.style.display = 'none';
     importExportBar.style.display = 'none';
-    if (aiFillBox) aiFillBox.style.display = 'none';
+
   }
 }
 
@@ -827,140 +788,6 @@ document.getElementById('logoutModal').addEventListener('click', function(e) { i
 document.getElementById('newSubjectInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') addSubject(); });
 document.getElementById('addForm').addEventListener('submit', addCard);
 
-// ===== AI 智能补充 =====
-
-// DeepSeek API 密钥 — 从 localStorage 读取
-let AI_API_KEY = (localStorage.getItem('aiDeepSeekKey') || '').trim();
-
-async function aiSearchKnowledge() {
-  if (!isAdmin) return;
-  // 检查 API Key
-  if (!AI_API_KEY) {
-    const key = localStorage.getItem('aiDeepSeekKey');
-    if (key) {
-      AI_API_KEY = key;
-    } else {
-      alert('请先在 AI 面板中输入并保存你的 DeepSeek API Key');
-      document.getElementById('aiApiKey').focus();
-      return;
-    }
-  }
-  const publisher = document.getElementById('aiPublisher').value.trim();
-  const grade = document.getElementById('aiGrade').value.trim();
-  const subject = document.getElementById('aiSubject').value.trim();
-  const unit = document.getElementById('aiUnit').value.trim();
-
-  if (!publisher || !grade || !subject || !unit) {
-    alert('请填写完整的教材信息（出版社、年级、科目、单元）');
-    return;
-  }
-
-  const resultArea = document.getElementById('aiResultArea');
-  resultArea.style.display = 'block';
-  resultArea.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:32px;margin-bottom:12px">⏳</div><p>正在搜索并生成知识点...</p><p style="font-size:12px;color:var(--text-light);margin-top:4px">' + publisher + ' · ' + grade + ' · ' + subject + ' · ' + unit + '</p></div>';
-
-  try {
-    const prompt = '你是一位教学经验丰富的 ' + subject + ' 老师。请根据以下教材信息，列出该章节最重要的 10~15 个知识点（每个知识点含【问题】和【答案】），要求：\n\n教材信息：\n- 出版社：' + publisher + '\n- 年级：' + grade + '\n- 科目：' + subject + '\n- 单元/章节：' + unit + '\n\n请以 JSON 数组格式返回，每个元素包含 question 和 answer 两个字段。answer 要包含完整的定义、关键点和记忆口诀/技巧。只返回 JSON，不要额外说明。';
-
-    const resp = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + AI_API_KEY
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: '你是一个专业的学科知识整理助手。返回严格 JSON 格式，不要包含 markdown 代码块标记。' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 4096,
-        enable_search: true
-      })
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error('API \u8BF7\u6C42\u5931\u8D25: ' + resp.status + ' ' + errText);
-    }
-
-    const json = await resp.json();
-    const content = json.choices?.[0]?.message?.content || '';
-
-    // \u5C1D\u8BD5\u63D0\u53D6 JSON
-    let items = [];
-    try { items = JSON.parse(content); } catch(e) {
-      const match = content.match(/```(?:json)?\\s*([\\s\\S]*?)```/);
-      if (match) { try { items = JSON.parse(match[1].trim()); } catch(e2) {} }
-    }
-
-    if (!Array.isArray(items) || items.length === 0) {
-      resultArea.innerHTML = '<div style="padding:16px;background:#fef2f2;border-radius:10px;font-size:14px;color:var(--danger)"><strong>❌ \u89E3\u6790\u5931\u8D25</strong><br><span style="font-size:12px;color:var(--text-light)">AI \u8FD4\u56DE\u5185\u5BB9\u65E0\u6CD5\u89E3\u6790\u4E3A\u77E5\u8BC6\u70B9\u5217\u8868\u3002<br><br>\u539F\u59CB\u8FD4\u56DE\uFF08\u622A\u53D6\uFF09\uFF1A<br>' + escapeHtml(content.slice(0, 500)) + '</span></div>';
-      return;
-    }
-
-    // \u6E32\u67D3\u9884\u89C8\u5217\u8868
-    const tag = subject;
-    let html = '<div style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:10px"><strong>✅ \u751F\u6210 ' + items.length + ' \u4E2A\u77E5\u8BC6\u70B9</strong><span style="font-size:12px;color:var(--text-light);margin-left:8px">\u5206\u7C7B\u6807\u7B7E\uFF1A#' + tag + '</span></div>';
-    html += '<div style="max-height:360px;overflow-y:auto;margin-bottom:10px">';
-    items.forEach((item, i) => {
-      const ansPreview = (item.answer || '').length > 80 ? (item.answer || '').slice(0, 80) + '...' : (item.answer || '');
-      html += '<div style="padding:8px 10px;margin-bottom:6px;background:var(--bg);border-radius:8px;font-size:13px"><strong>' + (i+1) + '. ' + escapeHtml(item.question || '') + '</strong><br><span style="color:var(--text-light);font-size:12px">' + escapeHtml(ansPreview) + '</span></div>';
-    });
-    html += '</div>';
-    html += '<div style="display:flex;gap:8px"><button onclick="confirmAiItems()" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--success);color:white;font-size:15px;font-weight:600;cursor:pointer">📥 全部添加</button><button onclick="hideAiResult()" style="padding:12px 20px;border:none;border-radius:10px;background:var(--border);color:var(--text);font-size:15px;cursor:pointer">取消</button></div>';
-    html += '</div>';
-
-    // \u4FDD\u5B58\u5230\u4E34\u65F6\u53D8\u91CF\u4F9B\u786E\u8BA4\u6309\u94AE\u8C03\u7528
-    window._aiItems = items;
-    resultArea.innerHTML = html;
-
-  } catch(e) {
-    resultArea.innerHTML = '<div style="padding:16px;background:#fef2f2;border-radius:10px;font-size:14px;color:var(--danger)"><strong>❌ \u8BF7\u6C42\u51FA\u9519</strong><br><span style="font-size:12px">' + escapeHtml(e.message) + '</span></div>';
-  }
-}
-
-function saveAiKey() {
-  const key = document.getElementById('aiApiKey').value.trim();
-  if (key) {
-    localStorage.setItem('aiDeepSeekKey', key);
-    AI_API_KEY = key;
-    alert('✅ API Key 已保存到本地浏览器');
-  } else {
-    localStorage.removeItem('aiDeepSeekKey');
-    AI_API_KEY = '';
-  }
-}
-
-function hideAiResult() { document.getElementById('aiResultArea').style.display = 'none'; }
-
-function confirmAiItems() {
-  if (!isAdmin || !window._aiItems || window._aiItems.length === 0) return;
-  const items = window._aiItems;
-  const subject = getSubject();
-  const tag = document.getElementById('aiSubject').value.trim() || subject.name;
-  const now = new Date().toISOString();
-  items.forEach(item => {
-    if (!item.question || !item.answer) return;
-    data.cards.push({
-      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
-      subject: subject.id,
-      question: item.question.trim(),
-      answer: item.answer.trim(),
-      tag: tag,
-      level: 0,
-      lastReview: now
-    });
-  });
-  saveUserData(currentUser, data);
-  window._aiItems = null;
-  document.getElementById('aiResultArea').style.display = 'none';
-  renderAll();
-  alert('✅ \u6210\u529F\u6DFB\u52A0 ' + items.length + ' \u4E2A\u77E5\u8BC6\u70B9\u5230\u300C' + subject.name + '\u300D\u5B66\u79D1\uFF01');
-}
-
-// ===== \u542F\u52A8 =====
 renderUserSelect();
 </script>
 </body>
