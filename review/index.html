@@ -157,28 +157,15 @@
 <body>
 
 <!-- ===== 登录页 ===== -->
-<div class="login-page" id="loginPage">
+<!-- 登录页已移除 -->
+<div class="login-page" style="display:none;">
   <div class="login-box">
-    <h1>📚 知识点复习</h1>
-    <div class="sub">Isaac1 · 学习助手</div>
-    <div id="loginError" class="login-err"></div>
-    <div id="userSelectArea"></div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
-    <div style="text-align:left">
-      <label>或手动输入</label>
-      <input id="loginManualInput" placeholder="用户名 (如 user1)" value="">
-      <label>密码</label>
-      <input id="loginPwdInput" type="password" placeholder="管理员输入密码" value="">
-      <button class="login-btn" onclick="manualLogin()">登录</button>
-    </div>
+    <h1>🚀 加载中...</h1>
   </div>
-</div>
-
-<!-- ===== 主界面 ===== -->
-<div class="app-page" id="appPage">
+</div><div class="app-page" id="appPage">
 <div class="header">
   <div class="header-row"><h1>📚 知识点复习</h1></div>
-  <div class="subtitle" id="loginStatusBar" onclick="showLogoutConfirm()">按记忆曲线安排复习</div>
+  <div class="subtitle" id="examCountdown">按记忆曲线安排复习</div>
 </div>
 <div class="container">
   <div class="subject-nav" id="subjectNav"></div>
@@ -188,7 +175,7 @@
     <div class="days" id="daysDisplay">--</div>
     <div class="days-label">天后考试</div>
     <div class="exam-date" id="examDateDisplay"></div>
-    <button class="edit-btn" onclick="showExamModal()">✏️ 设置考试</button>
+    <button class="edit-btn" onclick="openExamModal()">✏️ 设置考试</button>
   </div>
 
   <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill" style="width:0%"></div></div>
@@ -224,12 +211,7 @@
       <select id="manageFilter"><option value="">全部分类</option></select>
       <input id="manageSearch" placeholder="🔍 搜索...">
     </div>
-    <div class="import-export" id="importExportBar">
-      <button onclick="exportData()">📤 导出</button>
-      <button onclick="document.getElementById('importFile').click()">📥 导入</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-    </div>
-    <div id="cardList" class="card-list"></div>
+
   </div>
 
   <div class="tab-content" id="tabStats">
@@ -269,34 +251,6 @@
       <button class="btn-cancel" onclick="closeSubjectModal()" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;background:var(--border);color:var(--text)">完成</button>
     </div>
   </div>
-</div>
-
-<div class="modal-overlay" id="userManageModal">
-  <div class="modal">
-    <h3>👥 用户管理</h3>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:12px">管理员可重置普通用户密码</p>
-    <div id="userManageList"></div>
-    <div class="actions" style="margin-top:12px">
-      <button class="btn-cancel" onclick="closeUserManageModal()" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;background:var(--border);color:var(--text)">完成</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="logoutModal">
-  <div class="modal">
-    <h3>🔒 切换账号</h3>
-    <p style="font-size:14px;color:var(--text-light);margin-bottom:12px">当前：<span id="logoutCurrentUser"></span></p>
-    <div class="actions" style="flex-direction:column;gap:8px">
-      <button class="btn-confirm" onclick="logout()" style="width:100%;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;background:var(--primary);color:white">退出登录</button>
-      <button class="btn-cancel" onclick="closeLogoutModal()" style="width:100%;padding:12px;border:none;border-radius:10px;font-size:15px;cursor:pointer;background:var(--border);color:var(--text)">取消</button>
-    </div>
-    <div id="adminTools" style="display:none;margin-top:16px">
-      <hr style="border:none;border-top:1px solid var(--border);margin-bottom:12px">
-      <button onclick="openUserManageModal()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;background:var(--card-bg);color:var(--text)">👥 管理用户</button>
-      <button onclick="openSubjectModal()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;background:var(--card-bg);color:var(--text);margin-top:8px">📂 管理学科</button>
-    </div>
-  </div>
-</div>
 
 <div class="modal-overlay" id="editCardModal">
   <div class="modal">
@@ -315,159 +269,241 @@
 </div>
 
 <script>
-// ===== 账号系统 =====
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin';
-const MAX_USERS = 10;
+// ===== 学科和知识点（硬编码） =====
+const SUBJECTS = [
+  { id: 'yu7', name: '七年级·语文', color: '#ef4444' },
+  { id: 'shu7', name: '七年级·数学', color: '#3b82f6' },
+  { id: 'eng7', name: '七年级·英语', color: '#10b981' },
+  { id: 'li7', name: '七年级·历史', color: '#f59e0b' },
+  { id: 'di7', name: '七年级·地理', color: '#84cc16' },
+  { id: 'sw7', name: '七年级·生物', color: '#22c55e' },
+  { id: 'df7', name: '七年级·道德与法治', color: '#a855f7' },
+  { id: 'yu8', name: '八年级·语文', color: '#dc2626' },
+  { id: 'shu8', name: '八年级·数学', color: '#2563eb' },
+  { id: 'eng8', name: '八年级·英语', color: '#059669' },
+  { id: 'wl8', name: '八年级·物理', color: '#0891b2' },
+  { id: 'li8', name: '八年级·历史', color: '#d97706' },
+  { id: 'di8', name: '八年级·地理', color: '#65a30d' },
+  { id: 'sw8', name: '八年级·生物', color: '#16a34a' },
+  { id: 'df8', name: '八年级·道德与法治', color: '#9333ea' }
+];
 
-function getUsers() {
-  try {
-    const raw = localStorage.getItem('reviewUsers');
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  const users = {};
-  for (let i = 1; i <= MAX_USERS; i++) users['user' + i] = '123456';
-  users[ADMIN_USER] = '__admin__';
-  localStorage.setItem('reviewUsers', JSON.stringify(users));
-  return users;
-}
-function saveUsers(users) {
-  const toSave = {...users};
-  delete toSave[ADMIN_USER];
-  localStorage.setItem('reviewUsers', JSON.stringify(toSave));
-}
-function getDataKey(username) { return 'reviewData_' + username; }
+const DEFAULT_KP = [
+  // ========== 七年级·语文 ==========
+  { id: 'kp_yu7_1', subject: 'yu7', question: '《春》的作者是谁？文章主要描写了什么？', answer: '作者是朱自清。文章通过描绘春草图、春花图、春风图、春雨图和迎春图五幅画面，生动地展现了春天的生机与活力，表达了作者对春天的热爱和赞美之情。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_2', subject: 'yu7', question: '《济南的冬天》中，作者老舍用什么手法描写济南冬天的特点？', answer: '老舍运用了比喻、拟人等修辞手法。将济南比作"小摇篮"，把冬天的济南描绘成一个温暖、慈善、秀气的"宝地"。通过对比北平、伦敦和济南的冬天，突出济南冬天温晴的特点。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_3', subject: 'yu7', question: '《观沧海》中"日月之行，若出其中；星汉灿烂，若出其里"运用了什么手法？表达了什么？', answer: '运用了夸张和想象的手法。诗人以沧海自比，通过丰富的想象描绘了大海吞吐日月、包蕴星汉的壮阔景象，表达了自己统一天下的雄心壮志和博大胸襟。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_4', subject: 'yu7', question: '什么是"记叙文六要素"？', answer: '记叙文六要素包括：时间、地点、人物、起因、经过、结果。掌握六要素有助于理清文章思路，更好地理解文章内容。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_5', subject: 'yu7', question: '《天净沙·秋思》中"枯藤老树昏鸦，小桥流水人家，古道西风瘦马"用了什么表现手法？', answer: '运用了白描和列锦（意象并列）的手法。作者用九个名词意象并列呈现，勾勒出一幅萧瑟苍凉的秋日黄昏图景，表达了游子漂泊天涯的孤寂和思乡之情。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_6', subject: 'yu7', question: '《世说新语》二则中《咏雪》讲的什么故事？说明了什么？', answer: '讲的是谢太傅在雪天考问侄儿侄女"白雪纷纷何所似"，兄子胡儿说"撒盐空中差可拟"，兄女谢道韫说"未若柳絮因风起"的故事。说明谢道韫的比喻更加贴切、富有诗意，体现了她的才思敏捷。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_7', subject: 'yu7', question: '《论语》十二章中"学而不思则罔，思而不学则殆"是什么意思？', answer: '只学习而不思考，就会迷惑不解；只思考而不学习，就会疑惑而无所得。这句话强调了学与思必须紧密结合，二者缺一不可。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_8', subject: 'yu7', question: '《诫子书》中"非淡泊无以明志，非宁静无以致远"的含义是什么？', answer: '出自诸葛亮的《诫子书》。意思是：不内心恬淡、不慕名利就无法明确自己的志向，不保持内心的宁静就无法达到深远的境界。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_9', subject: 'yu7', question: '《皇帝的新装》是哪个国家的作家写的？故事讽刺了什么？', answer: '作者是丹麦作家安徒生。故事讽刺了统治者的愚蠢和虚伪，以及世人的盲从和自欺欺人。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_10', subject: 'yu7', question: '《从百草园到三味书屋》中，作者鲁迅通过什么对比手法表达了什么？', answer: '通过百草园与三味书屋的鲜明对比，表达了作者对自由快乐童年生活的怀念，以及对封建教育制度压抑儿童天性的批判。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_11', subject: 'yu7', question: '什么是比喻？比喻有哪些类型？', answer: '比喻是用一种事物来比方另一种事物的修辞手法。分为三类：明喻（像、如同等）；暗喻（是、成为等）；借喻（直接用喻体代替本体）。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu7_12', subject: 'yu7', question: '《木兰诗》中"万里赴戎机，关山度若飞"描写了什么内容？', answer: '描写了花木兰奔赴战场的场景。"万里"极言征途之远，"关山度若飞"形容行军速度之快，表现了木兰替父从军、不辞辛劳的英勇形象。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
 
-function getUserData(username) {
-  try {
-    const raw = localStorage.getItem(getDataKey(username));
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
-function saveUserData(username, dataObj) { localStorage.setItem(getDataKey(username), JSON.stringify(dataObj)); }
+  // ========== 七年级·数学 ==========
+  { id: 'kp_shu7_1', subject: 'shu7', question: '什么是有理数？', answer: '有理数是可以表示为两个整数之比 p/q（q≠0）的数，包括正整数、0、负整数、正分数、负分数。有理数分为整数和分数两大类。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_2', subject: 'shu7', question: '数轴的三要素是什么？如何用数轴比较有理数的大小？', answer: '三要素：原点、正方向和单位长度。在数轴上，右边的数总比左边的数大。正数>0>负数，两个负数比较大小，绝对值大的反而小。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_3', subject: 'shu7', question: '什么是相反数和绝对值？', answer: '相反数：只有符号不同的两个数互为相反数，0的相反数是0。绝对值：数轴上表示数a的点与原点的距离，记作|a|。正数的绝对值是它本身，负数的绝对值是它的相反数，0的绝对值是0。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_4', subject: 'shu7', question: '有理数的加法法则是什么？', answer: '（1）同号两数相加，取相同符号，绝对值相加。（2）异号两数相加，绝对值相等和为0；不等时取绝对值较大的符号，大绝对值减小绝对值。（3）任何数与0相加仍得这个数。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_5', subject: 'shu7', question: '什么是合并同类项？法则是什么？', answer: '把多项式中的同类项合并成一项。法则：同类项的系数相加作为结果系数，字母和字母的指数不变。只有同类项才能合并。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_6', subject: 'shu7', question: '解一元一次方程的一般步骤是什么？', answer: '（1）去分母；（2）去括号；（3）移项；（4）合并同类项；（5）系数化为1。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_7', subject: 'shu7', question: '什么是二元一次方程组？有哪些常用解法？', answer: '含有两个未知数，且次数都是1的方程组成的方程组。解法：代入消元法和加减消元法。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_8', subject: 'shu7', question: '不等式的性质有哪些？', answer: '性质1：两边加减同一个数（式子），不等号方向不变。性质2：两边乘除同一正数，不等号方向不变。性质3：两边乘除同一负数，不等号方向改变。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_9', subject: 'shu7', question: '平行线的判定方法有哪些？', answer: '（1）同位角相等，两直线平行；（2）内错角相等，两直线平行；（3）同旁内角互补，两直线平行；（4）平行于同一条直线的两直线平行；（5）垂直于同一条直线的两直线平行（同一平面内）。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_10', subject: 'shu7', question: '三角形的内角和是多少？三边关系是什么？', answer: '三角形内角和为180°。三边关系：任意两边之和大于第三边，任意两边之差小于第三边。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_11', subject: 'shu7', question: '什么是平方根和算术平方根？', answer: '平方根：若x²=a，则x是a的平方根，记作±√a。正数有两个平方根，0的平方根是0，负数无平方根。算术平方根：正数a的正的平方根，记作√a。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu7_12', subject: 'shu7', question: '什么是立方根？立方根的性质是什么？', answer: '若x³=a，则x是a的立方根，记作³√a。性质：正数的立方根是正数，负数的立方根是负数，0的立方根是0。任何实数都有唯一的立方根。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
 
-function getDefaultData() {
-  return {
-    examName: '📖 考试',
-    examDate: new Date(Date.now() + 30*86400000).toISOString().slice(0,10),
-    subjects: [{ id: 'default', name: '默认', color: '#4f46e5' }],
-    activeSubject: 'default',
-    cards: []
-  };
-}
+  // ========== 七年级·英语 ==========
+  { id: 'kp_eng7_1', subject: 'eng7', question: 'be动词（am/is/are）的使用规则是什么？', answer: 'I用am，he/she/it及单数名词用is，you及复数主语用are。口诀：I用am，you用are，is用于他她它，复数主语全用are。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_2', subject: 'eng7', question: '一般现在时第三人称单数动词变化规则？', answer: '（1）一般动词加-s；（2）以s,x,ch,sh,o结尾加-es；（3）辅音+y结尾改y为i加-es。否定句用doesn\'t+动词原形，疑问句用Does+主语+动词原形。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_3', subject: 'eng7', question: '现在进行时的结构和用法是什么？', answer: '结构：be动词（am/is/are）+ 动词-ing。用法：表示正在进行的动作或当前一段时间内的活动。标志词：now, look, listen, at the moment等。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_4', subject: 'eng7', question: '可数名词和不可数名词的区别是什么？', answer: '可数名词有单复数形式（如book→books），可用a/an和数词修饰。不可数名词一般没有复数形式（如water, milk），不能直接用a/an修饰，需要用量词（a glass of water）。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_5', subject: 'eng7', question: '一般过去时的规则动词过去式如何变化？', answer: '（1）一般加-ed；（2）以e结尾加-d；（3）辅音+y结尾改y为i加-ed；（4）重读闭音节双写末尾辅音加-ed。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_6', subject: 'eng7', question: 'What time和When的区别是什么？', answer: 'What time侧重问具体时间点（几点几分），回答用at+时间。When可问具体时间点也可问日期。what time的询问更精确。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_7', subject: 'eng7', question: 'There be句型的使用规则是什么？', answer: '表示"某地有某物"。be动词的单复数由后面最近的名词决定（就近原则）。There is+单数/不可数；There are+复数。否定句加not，疑问句将be提前。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_8', subject: 'eng7', question: '频率副词有哪些？它们在句中的位置？', answer: 'always（总是）> usually（通常）> often（经常）> sometimes（有时）> seldom（很少）> never（从不）。位置：放在实义动词之前，be动词/情态动词/助动词之后。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_9', subject: 'eng7', question: '人称代词的主格和宾格有哪些？', answer: '主格（作主语）：I, you, he, she, it, we, they。宾格（作宾语）：me, you, him, her, it, us, them。如：I like her.（我主格，她宾格）', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_10', subject: 'eng7', question: '情态动词can的用法是什么？', answer: 'can表示"能、会"，后接动词原形。否定式can\'t（cannot），疑问式将can提到主语前。如：I can swim. Can you swim? I can\'t swim.', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_11', subject: 'eng7', question: '时间介词in, on, at的用法区别？', answer: 'in用于较长的时间（年、月、季节、上午/下午/晚上）；on用于具体某天（星期几、节日、具体日期）；at用于具体时刻（几点几分）。如：in 2023, on Monday, at 8 o\'clock。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng7_12', subject: 'eng7', question: '名词所有格的两种形式是什么？', answer: '（1）\'s所有格：用于有生命的名词，如Tom\'s book；以s结尾复数只加\'，如the students\' classroom。（2）of所有格：用于无生命的名词，如the name of the book。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
 
-let currentUser = null;
-let isAdmin = false;
-let data = getDefaultData();
-let editingCardId = null;
+  // ========== 七年级·历史 ==========
+  { id: 'kp_li7_1', subject: 'li7', question: '北京人生活在什么时期？有什么特征？', answer: '北京人生活在距今约70万—20万年前的旧石器时代。他们能够使用打制石器，会使用天然火，群居生活，是早期直立人的代表。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_2', subject: 'li7', question: '河姆渡人和半坡居民分别种植什么作物？', answer: '河姆渡人（长江流域）种植水稻，住干栏式房屋。半坡居民（黄河流域）种植粟（小米），住半地穴式房屋。他们都是新石器时代的代表。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_3', subject: 'li7', question: '传说中炎帝和黄帝的贡献是什么？为什么称"炎黄子孙"？', answer: '炎帝教民农耕、尝百草；黄帝建造宫室、发明车船、制作衣裳。炎黄部落联盟在涿鹿之战后打败蚩尤，逐渐形成华夏族主体，因此后人自称炎黄子孙。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_4', subject: 'li7', question: '夏朝的建立者是谁？它的建立有什么意义？', answer: '夏朝由禹建立（约公元前2070年）。这是中国历史上第一个王朝，标志着中国早期国家的产生，世袭制代替了禅让制。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_5', subject: 'li7', question: '西周的分封制是什么？有什么作用？', answer: '分封制：周天子将土地和人民分给诸侯（宗亲和功臣），诸侯有义务服从周天子并缴纳贡赋。作用：加强了周天子对地方的统治，扩大了统治范围。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_6', subject: 'li7', question: '春秋五霸和战国七雄分别指什么？', answer: '春秋五霸：齐桓公、晋文公、楚庄王、吴王阖闾、越王勾践等。战国七雄：齐、楚、燕、韩、赵、魏、秦。春秋时期诸侯争霸，战国时期七雄并立。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_7', subject: 'li7', question: '商鞅变法的主要内容有哪些？有什么影响？', answer: '内容：废井田开阡陌、奖励耕战、推行县制、统一度量衡。影响：使秦国经济得到发展，军队战斗力增强，为秦国统一全国奠定了基础。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_8', subject: 'li7', question: '孔子和老子分别是什么学派的代表？他们的核心思想是什么？', answer: '孔子是儒家学派创始人，核心思想是"仁"和"礼"，主张"仁者爱人""以德治国"。老子是道家学派创始人，核心思想是"道"和"无为而治"，主张顺应自然。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_9', subject: 'li7', question: '秦朝在中央和地方推行什么制度？', answer: '中央设三公九卿（丞相、太尉、御史大夫分别掌管行政、军事和监察）。地方推行郡县制，全国分三十六郡，郡下设县。郡县长官由中央直接任免。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_10', subject: 'li7', question: '汉武帝为巩固大一统采取了哪些措施？', answer: '政治：颁布推恩令削弱王国势力。思想："罢黜百家，独尊儒术"。经济：铸币权收归中央、盐铁官营。军事：北击匈奴。外交：张骞出使西域。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_11', subject: 'li7', question: '丝绸之路的起点和主要路线是什么？有什么意义？', answer: '起点：长安（今西安）。路线：经河西走廊→西域→中亚→西亚→欧洲。意义：促进了中外经济文化交流，是东西方文明交流的重要通道。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li7_12', subject: 'li7', question: '造纸术的发明和改进有什么意义？', answer: '西汉时发明了纸，东汉蔡伦改进了造纸术（"蔡侯纸"）。原料易得、成本低廉，大大促进了文化传播和交流，是中国对世界文明的重大贡献。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
 
-// ===== 登录 =====
-function renderUserSelect() {
-  const area = document.getElementById('userSelectArea');
-  const users = getUsers();
-  let html = '<div class="user-grid">';
-  let count = 0;
-  for (const uname of Object.keys(users)) {
-    if (uname === ADMIN_USER) continue;
-    count++;
-    html += `<button onclick="quickLogin('${uname}')">👤 ${uname}</button>`;
-  }
-  html += '</div>';
-  if (count === 0) html = '<div style="color:var(--text-light);font-size:14px;margin:16px 0">暂无用户</div>';
-  area.innerHTML = html;
-}
+  // ========== 七年级·地理 ==========
+  { id: 'kp_di7_1', subject: 'di7', question: '地球的形状和大小是怎样的？', answer: '地球是一个两极稍扁、赤道略鼓的不规则球体。平均半径约6371千米，赤道周长约4万千米，表面积约5.1亿平方千米。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_2', subject: 'di7', question: '纬线和经线的特点分别是什么？', answer: '纬线：与赤道平行，呈圆圈状，长度不相等（赤道最长），指示东西方向。经线：连接南北两极，呈半圆状，长度相等，指示南北方向。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_3', subject: 'di7', question: '地球自转和公转的方向、周期分别是什么？', answer: '自转：方向自西向东，周期约24小时（一天），产生昼夜更替和时差。公转：方向自西向东，周期约365天（一年），产生四季变化和五带划分。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_4', subject: 'di7', question: '五带是怎样划分的？各带有什么气候特点？', answer: '以回归线和极圈为界。热带（23.5°N—23.5°S）终年炎热；北/南温带回归线至极圈之间，四季分明；北/南寒带极圈以内，终年寒冷。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_5', subject: 'di7', question: '七大洲和四大洋的名称及面积排序？', answer: '七大洲（面积从大到小）：亚洲、非洲、北美洲、南美洲、南极洲、欧洲、大洋洲。四大洋（面积从大到小）：太平洋、大西洋、印度洋、北冰洋。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_6', subject: 'di7', question: '大陆漂移学说的主要观点是什么？', answer: '德国魏格纳提出。两亿年前地球上只有一块联合古陆，后来分裂成几块并缓慢漂移，形成今天的海陆分布。证据：大西洋两岸轮廓吻合、化石和地质构造的相似性。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_7', subject: 'di7', question: '世界气温分布的规律是什么？', answer: '（1）大致从低纬向高纬递减；（2）同纬度地区，夏季陆地气温高于海洋，冬季相反；（3）气温随海拔升高而降低，每升高100米约降低0.6°C。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_8', subject: 'di7', question: '世界降水分布的规律是什么？', answer: '赤道地区降水多，两极地区降水少；中纬度沿海降水多，内陆降水少；山地迎风坡降水多，背风坡降水少。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_9', subject: 'di7', question: '世界主要气候类型有哪些？', answer: '热带：热带雨林、热带季风、热带草原、热带沙漠。温带：亚热带季风、地中海、温带海洋性、温带季风、温带大陆性。寒带：寒带气候。高山高原气候。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_10', subject: 'di7', question: '人口自然增长率与哪些因素有关？', answer: '人口自然增长率 = 出生率 - 死亡率。主要由经济发展水平、医疗卫生条件、文化教育水平等因素影响。一般来说，发展中国家增长率高，发达国家低。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_11', subject: 'di7', question: '世界三大人种及其分布？', answer: '白种人：主要分布在欧洲、北美洲、大洋洲。黄种人：主要分布在亚洲东部和东南部。黑种人：主要分布在非洲中南部、大洋洲。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di7_12', subject: 'di7', question: '联合国六种工作语言是什么？使用人数最多的语言是？', answer: '六种工作语言：汉语、英语、法语、俄语、西班牙语、阿拉伯语。使用人数最多的语言是汉语，使用范围最广的语言是英语。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
 
-function quickLogin(username) { currentUser = username; isAdmin = false; finalizeLogin(); }
+  // ========== 七年级·生物 ==========
+  { id: 'kp_sw7_1', subject: 'sw7', question: '生物的共同特征有哪些？', answer: '（1）需要营养；（2）能进行呼吸；（3）能排出废物；（4）有应激性；（5）能生长繁殖；（6）有遗传变异现象；（7）除病毒外由细胞构成。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_2', subject: 'sw7', question: '植物细胞和动物细胞的结构有什么区别？', answer: '相同点：都有细胞膜、细胞质、细胞核、线粒体。不同点：植物细胞有细胞壁、叶绿体、液泡；动物细胞没有这些结构。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_3', subject: 'sw7', question: '显微镜的使用步骤是什么？', answer: '（1）取镜安放；（2）对光（转动转换器使低倍物镜对准通光孔）；（3）放置玻片标本；（4）调焦（先粗准焦螺旋后细准焦螺旋）；（5）观察。注意：先用低倍镜再换高倍镜。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_4', subject: 'sw7', question: '什么是细胞分裂？有什么意义？', answer: '细胞分裂是一个细胞分成两个细胞的过程。新细胞与原细胞的遗传物质相同。意义：使细胞数目增加，生物体长大，以及生物体修复损伤。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_5', subject: 'sw7', question: '人体的四大基本组织是什么？各有什么功能？', answer: '上皮组织：保护和分泌。肌肉组织：收缩舒张，产生运动。结缔组织：支持、连接、保护、营养。神经组织：感受刺激、传导兴奋。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_6', subject: 'sw7', question: '种子萌发的条件和过程是怎样的？', answer: '条件：适宜的温度、适量的水分、充足的空气。过程：种子吸水膨胀→胚根突破种皮形成根→胚芽发育成茎和叶→逐渐成为独立植株。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_7', subject: 'sw7', question: '光合作用的原料、产物和条件是什么？', answer: '原料：二氧化碳和水。条件：光、叶绿体。产物：淀粉和氧气。反应式：二氧化碳+水→（光,叶绿体）→淀粉+氧气。主要在植物的叶片中进行。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_8', subject: 'sw7', question: '呼吸作用是什么？和光合作用有什么区别？', answer: '呼吸作用：细胞利用氧将有机物分解为二氧化碳和水，释放能量的过程。区别：光合作用合成有机物储存能量（需要光），呼吸作用分解有机物释放能量（活细胞随时进行）。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_9', subject: 'sw7', question: '植物根尖的结构有哪些？各有什么功能？', answer: '根冠：保护分生区。分生区：细胞分裂使根生长。伸长区：细胞迅速伸长。成熟区：有根毛，吸收水分和无机盐的主要部位。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_10', subject: 'sw7', question: '蒸腾作用的概念和意义是什么？', answer: '蒸腾作用：水分从活的植物体表面（主要是叶片）以水蒸气状态散失的过程。意义：促进根吸收水分，促进水分和无机盐的运输，降低叶片温度。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_11', subject: 'sw7', question: '单细胞生物有哪些？草履虫的结构特点？', answer: '单细胞生物如草履虫、眼虫、衣藻、变形虫、细菌等。草履虫：呈倒置草鞋状，有纤毛（运动）、食物泡（消化）、伸缩泡（排泄）、胞肛（排出残渣）等结构。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw7_12', subject: 'sw7', question: '什么是生态系统？生态系统的组成有哪些？', answer: '生态系统：一定区域内生物与环境形成的统一整体。组成：生物部分（生产者、消费者、分解者）和非生物部分（阳光、空气、水、温度等）。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
 
-function manualLogin() {
-  const uname = document.getElementById('loginManualInput').value.trim().toLowerCase();
-  const pwd = document.getElementById('loginPwdInput').value.trim();
-  document.getElementById('loginError').textContent = '';
-  if (!uname) { document.getElementById('loginError').textContent = '请输入用户名'; return; }
-  if (uname === ADMIN_USER) {
-    if (pwd !== ADMIN_PASS) { document.getElementById('loginError').textContent = '管理员密码错误'; return; }
-    currentUser = ADMIN_USER; isAdmin = true; finalizeLogin(); return;
-  }
-  if (!uname.startsWith('user') || isNaN(uname.replace('user',''))) {
-    document.getElementById('loginError').textContent = '普通用户名为 user1~user10'; return;
-  }
-  const num = parseInt(uname.replace('user',''));
-  if (num < 1 || num > MAX_USERS) { document.getElementById('loginError').textContent = '编号 1~' + MAX_USERS; return; }
-  const users = getUsers();
-  if (!users[uname]) { document.getElementById('loginError').textContent = '用户不存在'; return; }
-  if (pwd !== users[uname]) { document.getElementById('loginError').textContent = '密码错误'; return; }
-  currentUser = uname; isAdmin = false; finalizeLogin();
-}
+  // ========== 七年级·道德与法治 ==========
+  { id: 'kp_df7_1', subject: 'df7', question: '怎样正确认识自己？', answer: '（1）从生理、心理、社会等方面认识自己；（2）通过自我评价认识自己，自我观察和分析；（3）通过他人评价认识自己，要重视他人的态度与评价，但也要客观冷静分析。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_2', subject: 'df7', question: '怎样做更好的自己？', answer: '（1）扬长避短；（2）主动改正缺点；（3）不断激发自己的潜能；（4）在为他人、为社会带来福祉的过程中实现。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_3', subject: 'df7', question: '朋友的作用和交友的原则是什么？', answer: '朋友的作用：影响我们的言谈举止、兴趣爱好、性格品格，见证成长历程。交友原则：友谊需要真诚、理解、信任、尊重，不能以牺牲原则为代价维持友谊。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_4', subject: 'df7', question: '网上交往的利与弊有哪些？', answer: '利：超越时空限制，拓展人际交往圈。弊：虚拟、间接、隐蔽，容易上当受骗，影响现实交往。建议：增强自我保护意识，不随意透露个人信息，学会理性辨别。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_5', subject: 'df7', question: '怎样建立良好的师生关系？', answer: '（1）正确认识老师的工作和角色；（2）主动与老师沟通交流；（3）理解和尊重老师；（4）正确对待老师的批评，有则改之无则加勉。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_6', subject: 'df7', question: '孝亲敬长的原因和做法是什么？', answer: '原因：父母给予我们生命，养育我们成长，孝亲敬长是中华民族的传统美德和法定义务。做法：尊敬、倾听、感恩，用行动表达关心（分担家务、努力学习等）。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_7', subject: 'df7', question: '生命的特性有哪些？怎样敬畏生命？', answer: '生命特性：来之不易、独特、不可逆、短暂的。敬畏生命：珍爱自己的生命，不轻言放弃；关怀他人生命，不漠视。生命至上，每个人的生命都同样重要。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_8', subject: 'df7', question: '怎样面对生活中的挫折？', answer: '（1）认识到挫折是人生的一部分；（2）培养面对困难的勇气和坚强意志；（3）学会寻求帮助；（4）发掘自身的生命力量，增强生命韧性。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_9', subject: 'df7', question: '情绪有哪些类型？怎样调节情绪？', answer: '基本情绪：喜、怒、哀、惧。调节方法：（1）注意转移法；（2）合理发泄法（运动、倾诉等）；（3）理智控制法（自我安慰、换位思考等）。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_10', subject: 'df7', question: '什么是止于至善？怎样做到？', answer: '止于至善是追求最高的道德境界。做法：（1）从点滴小事做起，积善成德；（2）见贤思齐，向榜样学习；（3）自我省察，不断完善自己；（4）以修身为本。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_11', subject: 'df7', question: '集体的力量来自哪里？个人与集体的关系？', answer: '集体的力量来源于成员共同的目标和团结协作。个人与集体：个人在集体中获得安全感和归属感；集体成就个人，个人推动集体发展。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df7_12', subject: 'df7', question: '法律有什么特征？', answer: '（1）由国家制定或认可；（2）由国家强制力保证实施；（3）对全体社会成员具有普遍约束力。法律是公民权利的重要保障。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
 
-function finalizeLogin() {
-  const userData = getUserData(currentUser);
-  if (userData) {
-    data = userData;
-    if (!data.subjects) { data.subjects = [{ id: 'default', name: '默认', color: '#4f46e5' }]; data.activeSubject = 'default'; }
-    data.cards.forEach(c => { if (!c.subject) c.subject = 'default'; });
-  } else { data = getDefaultData(); saveUserData(currentUser, data); }
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('appPage').style.display = 'block';
-  document.getElementById('loginStatusBar').textContent = '👤 ' + currentUser + (isAdmin ? ' ⚡管理员' : '') + ' · 按记忆曲线安排复习';
-  setupUIPermissions();
-  renderAll();
-}
+  // ========== 八年级·语文 ==========
+  { id: 'kp_yu8_1', subject: 'yu8', question: '《藤野先生》选自鲁迅的哪部作品？文章表达了怎样的情感？', answer: '选自回忆性散文集《朝花夕拾》。文章通过回忆在日本留学期间与藤野先生的交往，赞扬了藤野先生正直热忱、治学严谨、没有民族偏见的品格，表达了作者的怀念和感激之情。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_2', subject: 'yu8', question: '《背影》中四次写父亲的背影，分别有什么作用？', answer: '第一次开篇点题（思念背影）；第二次浦口送别（刻画背影，最经典——父亲爬月台买橘子）；第三次离别（惜别背影）；第四次读信（思念背影）。以背影为线索贯穿全文，表现深沉的父爱。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_3', subject: 'yu8', question: '《三峡》中作者郦道元从哪些方面描写了三峡？', answer: '从山和水两方面描写。山：连绵不断、遮天蔽日（"两岸连山，略无阙处"）。水：夏季水势浩大（"虽乘奔御风，不以疾也"），春冬景色清幽，秋季凄清萧瑟。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_4', subject: 'yu8', question: '《记承天寺夜游》中"庭下如积水空明"用了什么修辞？表达了什么情感？', answer: '运用了比喻的修辞，将月光比作积水，竹柏影比作水中藻荇。表达了作者贬谪黄州期间的复杂心境——赏月的欣喜、漫步的悠闲、贬谪的悲凉和自我排遣的豁达。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_5', subject: 'yu8', question: '《使至塞上》中"大漠孤烟直，长河落日圆"好在哪里？', answer: '这两句以洗练的笔触勾勒出塞外壮阔奇丽的景色。"大"写沙漠浩瀚，"孤"写烽烟醒目，"直"突出劲拔坚毅，"长"写黄河绵延，"圆"写落日苍茫。被誉为"诗中有画"的经典。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_6', subject: 'yu8', question: '什么是说明文？说明文有哪些类型？', answer: '说明文是以说明为主要表达方式，介绍事物或阐明事理的文章。按说明对象分：事物说明文（如《中国石拱桥》）和事理说明文（如《大自然的语言》）。按语言风格分：平实说明文和生动说明文。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_7', subject: 'yu8', question: '说明文常用的说明方法有哪些？', answer: '举例子、列数字、作比较、打比方、分类别、下定义、摹状貌、画图表、作诠释、引用等。每种说明方法都有其独特的作用，能使说明更加准确、生动。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_8', subject: 'yu8', question: '《白杨礼赞》中作者茅盾为什么要赞美白杨树？', answer: '作者用白杨树象征北方抗日军民。白杨树"笔直""团结""倔强挺立"的特点，正是中国共产党领导下的北方军民坚强不屈、团结抗战精神的写照。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_9', subject: 'yu8', question: '《愚公移山》的寓意是什么？', answer: '寓言通过愚公带领家人挖山不止最终感动天帝移走两座大山的故事，说明了克服困难需要坚定的信念和不懈的努力，也体现了人定胜天的思想。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_10', subject: 'yu8', question: '《富贵不能淫》中孟子提出的"大丈夫"标准是什么？', answer: '"富贵不能淫，贫贱不能移，威武不能屈，此之谓大丈夫。"即：富贵不能使他迷惑，贫贱不能使他动摇，威武不能使他屈服。强调了大丈夫的坚定气节。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_11', subject: 'yu8', question: '《钱塘湖春行》中"几处早莺争暖树，谁家新燕啄春泥"描写了什么？', answer: '描写了早春西湖的生机勃勃。"早莺争暖树"写黄莺争占向阳的树枝，"新燕啄春泥"写燕子衔泥筑巢，动静结合，描绘出一幅充满活力的初春景象。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_yu8_12', subject: 'yu8', question: '什么是托物言志？请举例说明。', answer: '托物言志是借助对某事物的描写来表达作者志向和情感的手法。如《爱莲说》中周敦颐借莲的"出淤泥而不染"表达自己洁身自好的品格；《陋室铭》借陋室表达安贫乐道的情操。', tag: '语文', level: 0, lastReview: new Date().toISOString() },
 
-function setupUIPermissions() {
-  const addFormBox = document.getElementById('addFormBox');
-  const importExportBar = document.getElementById('importExportBar');
-  if (isAdmin) {
-    addFormBox.style.display = 'block';
-    importExportBar.style.display = 'flex';
-  } else {
-    addFormBox.style.display = 'none';
-    importExportBar.style.display = 'none';
+  // ========== 八年级·数学 ==========
+  { id: 'kp_shu8_1', subject: 'shu8', question: '什么是三角形的高、中线、角平分线？', answer: '高：从三角形一个顶点向对边所在直线作垂线，顶点与垂足之间的线段。中线：连接三角形一个顶点与对边中点的线段。角平分线：三角形一个内角的平分线与对边相交，顶点与交点之间的线段。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_2', subject: 'shu8', question: '全等三角形的判定方法有哪些？', answer: 'SSS（三边对应相等）、SAS（两边及其夹角对应相等）、ASA（两角及其夹边对应相等）、AAS（两角及其中一角的对边对应相等）、HL（直角三角形斜边和一直角边对应相等）。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_3', subject: 'shu8', question: '轴对称图形的概念是什么？等腰三角形有什么性质？', answer: '轴对称图形：沿一条直线折叠后，直线两旁部分能够完全重合的图形。等腰三角形性质：两腰相等，两底角相等（等边对等角），三线合一（顶角平分线、底边中线、底边高线互相重合）。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_4', subject: 'shu8', question: '整式的乘法法则包括哪些？', answer: '（1）同底数幂相乘：a^m·a^n=a^(m+n)；（2）幂的乘方：(a^m)^n=a^(mn)；（3）积的乘方：(ab)^n=a^n·b^n；（4）单项式乘单项式：系数相乘，同底数幂相乘；（5）多项式乘多项式：逐项相乘后合并同类项。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_5', subject: 'shu8', question: '乘法公式有哪些？', answer: '（1）平方差公式：(a+b)(a-b)=a²-b²。（2）完全平方公式：(a±b)²=a²±2ab+b²。注意记忆口诀：首平方、尾平方、积的两倍在中央。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_6', subject: 'shu8', question: '什么是因式分解？常用的方法有哪些？', answer: '因式分解是把一个多项式化成几个整式的积的形式。常用方法：（1）提公因式法；（2）公式法（平方差公式、完全平方公式）；（3）十字相乘法；（4）分组分解法。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_7', subject: 'shu8', question: '分式的基本性质是什么？', answer: '分式的分子与分母都乘以（或除以）同一个不等于0的整式，分式的值不变。即A/B = (A×C)/(B×C)（C≠0）。这是约分和通分的基础。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_8', subject: 'shu8', question: '二次根式的性质有哪些？', answer: '（1）√a²=|a|；（2）√(ab)=√a·√b（a≥0,b≥0）；（3）√(a/b)=√a/√b（a≥0,b>0）；（4）最简二次根式：被开方数不含分母且不含能开得尽的因数或因式。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_9', subject: 'shu8', question: '勾股定理的内容是什么？', answer: '直角三角形两直角边a、b的平方和等于斜边c的平方：a²+b²=c²。勾股定理的逆定理：若三角形三边满足a²+b²=c²，则该三角形是直角三角形。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_10', subject: 'shu8', question: '平行四边形的性质有哪些？', answer: '（1）对边平行且相等；（2）对角相等，邻角互补；（3）对角线互相平分；（4）是中心对称图形。判定方法：一组对边平行且相等、两组对边分别平行、两组对边分别相等、对角线互相平分、两组对角分别相等。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_11', subject: 'shu8', question: '什么是正比例函数和一次函数？', answer: '正比例函数：y=kx（k≠0），图像是过原点的直线。一次函数：y=kx+b（k≠0），图像是直线。k决定斜率（倾斜方向和程度），b决定在y轴上的截距。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_shu8_12', subject: 'shu8', question: '什么是众数、中位数、平均数？', answer: '众数：一组数据中出现次数最多的数。中位数：将数据按大小排列，中间位置的数（个数为偶数时取中间两个的平均数）。平均数：所有数据之和除以数据个数。', tag: '数学', level: 0, lastReview: new Date().toISOString() },
 
-  }
-}
+  // ========== 八年级·英语 ==========
+  { id: 'kp_eng8_1', subject: 'eng8', question: '一般将来时（will和be going to）的区别是什么？', answer: 'will：表示主观意愿、临时决定、预测等（I will help you./It will rain tomorrow.）。be going to：表示计划好的事或已有迹象表明将要发生（I am going to visit my grandma./Look at the clouds! It is going to rain.）。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_2', subject: 'eng8', question: '现在完成时的结构和用法是什么？', answer: '结构：have/has + 过去分词。用法：（1）表示过去发生且对现在有影响的动作（I have lost my key.）；（2）表示从过去延续到现在的状态（She has lived here for 5 years.）。注意：不能与具体过去时间连用。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_3', subject: 'eng8', question: '被动语态的结构是什么？不同时态的被动语态如何变化？', answer: '结构：be动词 + 及物动词的过去分词 + (by...)。一般现在时：am/is/are done；一般过去时：was/were done；一般将来时：will be done；现在完成时：have/has been done；含情态动词：can/must be done。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_4', subject: 'eng8', question: '比较级和最高级的构成规则是什么？', answer: '（1）单音节和部分双音节词：加-er/-est（tall→taller→tallest）；（2）以e结尾加-r/-st；（3）辅音+y改y为i加-er/-est；（4）重读闭音节双写末尾字母加-er/-est；（5）多音节词加more/most（beautiful→more beautiful→most beautiful）。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_5', subject: 'eng8', question: '形容词性物主代词和名词性物主代词的区别？', answer: '形容词性物主代词（my, your, his, her, its, our, their）+名词。名词性物主代词（mine, yours, his, hers, its, ours, theirs）相当于"形容词性物主代词+名词"，后面不能再跟名词。如：This is my book. = This book is mine.', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_6', subject: 'eng8', question: '宾语从句的语序和连接词是什么？', answer: '宾语从句要用陈述句语序。连接词：（1）陈述句用that（可省略）；（2）一般疑问句用if/whether；（3）特殊疑问句用原疑问词（what, when, where, why, how等）。如：I know (that) he is a teacher./I wonder if he will come.', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_7', subject: 'eng8', question: '条件状语从句（if）的"主将从现"规则是什么？', answer: '在if引导的条件状语从句中，主句用一般将来时，从句用一般现在时表示将来。如：If it rains tomorrow, we will stay at home. 类似用法的还有when, as soon as, unless, until等。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_8', subject: 'eng8', question: '不定代词的用法（some, any, no, every的复合词）？', answer: 'somebody/someone/something：一般用于肯定句；anybody/anyone/anything：一般用于否定句和疑问句；nobody/no one/nothing：表示否定；everybody/everyone/everything：表示"每个人/事"。形容词修饰复合不定代词时放在后面（如something important）。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_9', subject: 'eng8', question: 'too...to...和enough to的用法区别？', answer: 'too...to...：太……而不能……（否定意义）。如：He is too young to go to school.（他太小不能上学。）enough to：足够……可以……（肯定意义）。如：He is old enough to go to school.（他够大了可以上学。）', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_10', subject: 'eng8', question: '疑问词+不定式的用法？', answer: '疑问词（what, which, when, where, how等）后面可接不定式，在句中作主语、宾语、表语等。如：I don\'t know what to do.（宾语）/The question is how to get there.（表语）', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_11', subject: 'eng8', question: '直接引语变间接引语时的人称、时态变化规则？', answer: '人称：根据语境调整（一随主、二随宾、三不变）。时态：一般现在→一般过去，现在进行→过去进行，一般将来→过去将来，一般过去→过去完成。注意：客观真理仍用一般现在时。', tag: 'English', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_eng8_12', subject: 'eng8', question: '定语从句的关系代词怎么使用？', answer: '关系代词：who（指人，作主语），whom（指人，作宾语），which（指物），that（指人或物，作主语或宾语），whose（指所属关系）。如：The boy who is reading is my brother./The book that I bought is interesting.', tag: 'English', level: 0, lastReview: new Date().toISOString() },
 
-// ===== 退出 =====
-function showLogoutConfirm() {
-  document.getElementById('logoutCurrentUser').textContent = currentUser + (isAdmin ? ' (管理员)' : '');
-  document.getElementById('adminTools').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('logoutModal').classList.add('show');
-}
-function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('show'); }
-function logout() {
-  closeLogoutModal(); saveUserData(currentUser, data); currentUser = null; isAdmin = false;
-  document.getElementById('loginPage').style.display = 'flex';
-  document.getElementById('appPage').style.display = 'none';
-  document.getElementById('loginManualInput').value = '';
-  document.getElementById('loginPwdInput').value = '';
-  document.getElementById('loginError').textContent = '';
-  renderUserSelect();
-}
+  // ========== 八年级·物理 ==========
+  { id: 'kp_wl8_1', subject: 'wl8', question: '什么是机械运动？参照物的概念是什么？', answer: '机械运动：物体位置随时间的变化。参照物：判断物体运动时被选作标准的物体。运动和静止是相对的，同一个物体选不同参照物可能得出不同结论。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_2', subject: 'wl8', question: '速度的公式和单位是什么？怎样比较运动快慢？', answer: '速度公式：v=s/t（v速度，s路程，t时间）。国际单位：m/s，常用单位：km/h。1m/s=3.6km/h。比较快慢的方法：（1）相同时间比较路程；（2）相同路程比较时间。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_3', subject: 'wl8', question: '声音是如何产生和传播的？', answer: '声音由物体振动产生（振动停止，发声停止）。声音的传播需要介质（固体、液体、气体），真空不能传声。声速：在固体中最快、液体中次之、气体中最慢。空气中声速约340m/s。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_4', subject: 'wl8', question: '声音的三个特征是什么？各与什么因素有关？', answer: '（1）音调：声音的高低，由频率决定（频率越高音调越高）；（2）响度：声音的大小，由振幅决定（振幅越大响度越大），还与距离有关；（3）音色：声音的品质，由发声体本身材料、结构决定，用于辨别不同声源。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_5', subject: 'wl8', question: '光沿直线传播的条件是什么？有哪些应用和现象？', answer: '条件：在同种均匀介质中沿直线传播。应用和现象：（1）影子的形成；（2）日食和月食；（3）小孔成像；（4）射击瞄准等。光的传播速度：真空中约3×10⁸m/s。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_6', subject: 'wl8', question: '光的反射定律是什么？镜面反射和漫反射的区别？', answer: '反射定律：反射光线、入射光线和法线在同一平面内；反射光线和入射光线分居法线两侧；反射角等于入射角。镜面反射：平行光射到平滑表面仍平行反射。漫反射：平行光射到粗糙表面向各个方向反射。两种反射都遵守反射定律。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_7', subject: 'wl8', question: '平面镜成像的特点是什么？', answer: '（1）像与物大小相等；（2）像与物到镜面的距离相等；（3）像与物的连线与镜面垂直；（4）平面镜成的是正立、等大的虚像。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_8', subject: 'wl8', question: '凸透镜成像的规律是什么？', answer: 'u>2f：倒立缩小的实像（应用：照相机）。u=2f：倒立等大的实像。f<u<2f：倒立放大的实像（应用：投影仪）。u=f：不成像。u<f：正立放大的虚像（应用：放大镜）。口诀：一倍焦距分虚实，二倍焦距分大小。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_9', subject: 'wl8', question: '质量的概念和单位是什么？质量是物体的什么属性？', answer: '质量：物体所含物质的多少。国际单位：千克（kg），常用：吨(t)、克(g)、毫克(mg)。质量是物体的基本属性，不随形状、状态、位置、温度的改变而改变。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_10', subject: 'wl8', question: '密度的定义、公式和单位是什么？', answer: '密度：某种物质组成的物体的质量与体积之比。公式：ρ=m/V（ρ密度，m质量，V体积）。单位：kg/m³，常用g/cm³。1g/cm³=1000kg/m³。密度是物质的特性，不同的物质密度一般不同。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_11', subject: 'wl8', question: '力的作用效果是什么？力的三要素是什么？', answer: '力的作用效果：（1）改变物体的形状；（2）改变物体的运动状态（速度大小或方向改变）。力的三要素：大小、方向、作用点。力的单位：牛顿（N）。物体间力的作用是相互的。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_wl8_12', subject: 'wl8', question: '牛顿第一定律（惯性定律）的内容是什么？', answer: '一切物体在没有受到力的作用时，总保持静止状态或匀速直线运动状态。惯性：物体保持原来运动状态不变的性质。一切物体在任何情况下都有惯性。惯性大小只与质量有关，质量越大惯性越大。', tag: '物理', level: 0, lastReview: new Date().toISOString() },
 
-// ===== 用户管理 =====
-function openUserManageModal() { closeLogoutModal(); renderUserManageList(); document.getElementById('userManageModal').classList.add('show'); }
-function closeUserManageModal() { document.getElementById('userManageModal').classList.remove('show'); }
+  // ========== 八年级·历史 ==========
+  { id: 'kp_li8_1', subject: 'li8', question: '鸦片战争爆发的原因和结果是什么？', answer: '根本原因：英国为打开中国市场、掠夺原料。直接原因：林则徐虎门销烟。结果：清政府战败，签订了中国近代第一个不平等条约《南京条约》。影响：中国开始从封建社会沦为半殖民地半封建社会。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_2', subject: 'li8', question: '《南京条约》的主要内容有哪些？', answer: '（1）割让香港岛给英国；（2）赔款2100万银元；（3）开放广州、厦门、福州、宁波、上海五处通商口岸；（4）协定关税。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_3', subject: 'li8', question: '太平天国运动的领导人是谁？有什么历史意义？', answer: '领导人：洪秀全（金田起义）。意义：是中国历史上规模最宏大的一次农民战争，沉重打击了清朝统治和外国侵略势力。但由于农民阶级的局限性最终失败。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_4', subject: 'li8', question: '洋务运动的口号是什么？有哪些主要内容？', answer: '口号：前期"自强"（创办军事工业），后期"求富"（创办民用工业）。内容：（1）创办近代军事工业（江南制造总局等）；（2）创办民用企业（轮船招商局等）；（3）建立新式海军；（4）创办新式学堂、派遣留学生。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_5', subject: 'li8', question: '甲午中日战争中的关键战役和《马关条约》的内容？', answer: '关键战役：黄海海战（邓世昌壮烈殉国）、威海卫战役。《马关条约》内容：（1）割辽东半岛、台湾全岛及附属岛屿、澎湖列岛给日本；（2）赔款白银2亿两；（3）开放沙市、重庆、苏州、杭州为商埠；（4）允许日本在通商口岸开设工厂。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_6', subject: 'li8', question: '戊戌变法（百日维新）的主要内容和失败原因？', answer: '内容：在政治、经济、军事、文化教育等方面推行改革（如开办新式学堂、裁撤冗官、鼓励创办工矿企业等）。失败原因：顽固派势力强大；维新派依靠没有实权的光绪皇帝，缺乏群众基础；资产阶级的软弱性和妥协性。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_7', subject: 'li8', question: '辛亥革命的历史意义是什么？', answer: '辛亥革命推翻了清王朝的统治，结束了中国两千多年的封建君主专制制度，建立了中华民国，使民主共和观念深入人心。但革命果实被袁世凯窃取，没有完成反帝反封建的任务。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_8', subject: 'li8', question: '新文化运动的口号是什么？主要代表人物有哪些？', answer: '口号："民主"和"科学"（德先生和赛先生）。主要代表人物：陈独秀（《新青年》创办者）、李大钊、胡适、鲁迅等。新文化运动是一场伟大的思想解放运动。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_9', subject: 'li8', question: '五四运动爆发的原因和历史意义是什么？', answer: '导火索：巴黎和会上中国外交的失败（将山东权益转让给日本）。历史意义：是彻底的反帝反封建的爱国运动，是中国旧民主主义革命走向新民主主义革命的转折点，标志着中国新民主主义革命的开端。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_10', subject: 'li8', question: '中国共产党的成立时间、地点和历史意义？', answer: '成立时间：1921年7月。地点：上海（后转移至浙江嘉兴南湖）。意义：中国共产党的成立是中国历史上开天辟地的大事，使中国革命的面貌焕然一新。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_11', subject: 'li8', question: '南昌起义和秋收起义的意义是什么？', answer: '南昌起义（1927年8月1日）：打响了武装反抗国民党反动统治的第一枪，是中国共产党独立领导武装斗争和创建革命军队的开始。秋收起义后毛泽东建立了第一个农村革命根据地——井冈山革命根据地。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_li8_12', subject: 'li8', question: '西安事变和平解决有什么历史意义？', answer: '1936年张学良、杨虎城发动西安事变，中国共产党从全民族利益出发主张和平解决。意义：标志着国共十年内战的结束，抗日民族统一战线初步形成。', tag: '历史', level: 0, lastReview: new Date().toISOString() },
 
-function renderUserManageList() {
-  const users = getUsers();
-  const container = document.getElementById('userManageList');
-  let html = '<div class="user-manage-item"><div class="info"><span style="font-weight:600">admin</span><span class="role-badge">管理员</span></div><span style="font-size:12px;color:var(--text-light)">密码: admin</span></div>';
-  for (let i = 1; i <= MAX_USERS; i++) {
-    const uname = 'user' + i;
-    const pwd = users[uname] || '123456';
-    html += '<div class="user-manage-item"><div class="info"><span style="font-weight:600">' + uname + '</span><span class="role-badge">普通用户</span></div><div style="display:flex;gap:6px;align-items:center"><input class="pwd-reset-input" id="pwdInput_' + uname + '" value="' + pwd + '" style="padding:6px 10px!important;font-size:13px!important;border:1px solid var(--border)!important;border-radius:6px!important;width:120px!important"><button class="pwd-reset-btn" onclick="resetUserPwd(\'' + uname + '\')" style="background:var(--primary);color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer">更新</button></div></div>';
-  }
-  container.innerHTML = html;
-}
+  // ========== 八年级·地理 ==========
+  { id: 'kp_di8_1', subject: 'di8', question: '中国的地理位置有什么优越性？', answer: '（1）位于北半球、东半球，亚洲东部、太平洋西岸。（2）纬度位置：南北跨纬度约50°，大部分在北温带，南部小部分在热带，气候多样，有利于多种农业发展。（3）海陆位置：东临太平洋，沿海港口多，利于发展海洋事业和对外交往。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_2', subject: 'di8', question: '中国的陆地面积和行政区划是怎样的？', answer: '陆地面积约960万平方千米，居世界第三位。行政区划：分为省（自治区、直辖市、特别行政区）、县（市）、乡（镇）三级。共34个省级行政区（23个省、5个自治区、4个直辖市、2个特别行政区）。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_3', subject: 'di8', question: '中国的人口特点和政策是什么？', answer: '特点：人口基数大，人口增长快（过去）。政策：实行计划生育（鼓励生育调整后放宽），控制人口数量，提高人口素质。人口分布：东多西少（胡焕庸线——黑河—腾冲线）。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_4', subject: 'di8', question: '我国民族的分布特点是什么？', answer: '以汉族为主体，少数民族大杂居、小聚居、交错杂居。少数民族主要分布在西南、西北和东北地区。共56个民族，少数民族人口最多的是壮族。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_5', subject: 'di8', question: '我国地势的特点是什么？三级阶梯怎样划分？', answer: '地势西高东低，呈三级阶梯状分布。第一级阶梯：青藏高原（平均海拔4000米以上）。第二级阶梯：海拔1000—2000米，包括内蒙古高原、黄土高原、云贵高原、四川盆地等。第三级阶梯：海拔500米以下，包括东北平原、华北平原、长江中下游平原。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_6', subject: 'di8', question: '我国主要山脉的走向有哪些？', answer: '（1）东西走向：天山—阴山、昆仑山—秦岭、南岭。（2）东北—西南走向：大兴安岭—太行山—巫山—雪峰山、长白山—武夷山、台湾山脉。（3）西北—东南走向：阿尔泰山、祁连山。（4）南北走向：横断山脉、贺兰山。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_7', subject: 'di8', question: '我国气候的主要特征是什么？', answer: '（1）气候复杂多样：有热带季风、亚热带季风、温带季风、温带大陆性、高原山地气候等。（2）季风气候显著：东部地区降水集中在夏季，雨热同期，有利于农作物生长。季风区与非季风区的分界线：大兴安岭—阴山—贺兰山—巴颜喀拉山—冈底斯山。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_8', subject: 'di8', question: '秦岭—淮河一线的地理意义是什么？', answer: '（1）1月0°C等温线经过的地方；（2）800mm年等降水量线经过的地方；（3）亚热带与暖温带的分界线；（4）湿润区与半湿润区的分界线；（5）水田与旱地的分界线；（6）南方与北方的分界线。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_9', subject: 'di8', question: '我国主要河流的分布特点？长江和黄河分别注入什么海？', answer: '大多数河流自西向东流入太平洋。长江发源于唐古拉山，注入东海，是中国第一大河。黄河发源于巴颜喀拉山，注入渤海，是中国第二长河。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_10', subject: 'di8', question: '南水北调工程是什么？', answer: '南水北调是将长江流域的水调往华北和西北地区的跨流域调水工程。分为东线、中线和西线三条调水线路。以解决北方地区水资源短缺问题，促进水资源合理配置。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_11', subject: 'di8', question: '我国四大地理区域是如何划分的？', answer: '（1）北方地区：秦岭—淮河以北，以温带季风气候为主，作物以小麦为主。（2）南方地区：秦岭—淮河以南，亚热带季风气候，作物以水稻为主。（3）西北地区：干旱、半干旱，畜牧业为主，绿洲农业。（4）青藏地区：高寒，"高寒"畜牧业，河谷农业。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_di8_12', subject: 'di8', question: '什么是自然资源？我国的自然资源特点？', answer: '自然资源：自然界中对人类有利用价值的物质和能量。特点：总量丰富、人均不足。非可再生资源（煤炭、石油等）要节约利用；可再生资源（水、风、太阳能等）要合理利用，实现永续。', tag: '地理', level: 0, lastReview: new Date().toISOString() },
 
-function resetUserPwd(uname) {
-  const users = getUsers();
-  const newPwd = document.getElementById('pwdInput_' + uname).value.trim() || '123456';
-  users[uname] = newPwd;
-  saveUsers(users);
-  alert(uname + ' 密码已更新');
-}
+  // ========== 八年级·生物 ==========
+  { id: 'kp_sw8_1', subject: 'sw8', question: '无脊椎动物和脊椎动物的主要区别是什么？', answer: '无脊椎动物：体内没有由脊椎骨组成的脊柱（如腔肠动物、环节动物、节肢动物等）。脊椎动物：体内有脊柱（如鱼类、两栖类、爬行类、鸟类、哺乳类）。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_2', subject: 'sw8', question: '节肢动物的主要特征是什么？', answer: '（1）体表有外骨骼（保护和防止水分蒸发）；（2）身体和附肢分节；（3）呼吸器官因生活环境不同而不同（昆虫用气管，甲壳动物用鳃）。节肢动物是种类最多的动物类群。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_3', subject: 'sw8', question: '鱼类的主要特征是什么？', answer: '（1）生活在水中；（2）体表常有鳞片覆盖；（3）用鳃呼吸；（4）通过尾部和躯干部的摆动及鳍的协调作用游泳。体温不恒定（变温动物）。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_4', subject: 'sw8', question: '鸟类适于飞行的形态结构特点有哪些？', answer: '（1）体形呈流线型，减少飞行阻力；（2）体表覆羽，前肢变成翼；（3）骨骼轻、薄、坚固，有龙骨突；（4）胸肌发达，附着在龙骨突上；（5）食量大、消化快，有嗉囊和肌胃；（6）双重呼吸（有气囊辅助）。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_5', subject: 'sw8', question: '哺乳动物的主要特征是什么？', answer: '（1）体表被毛；（2）胎生哺乳（提高后代成活率）；（3）牙齿有门齿、犬齿、臼齿的分化；（4）体温恒定（恒温动物）；（5）用肺呼吸；（6）有高度发达的神经系统和感觉器官。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_6', subject: 'sw8', question: '细菌和真菌的主要区别是什么？', answer: '细菌：单细胞生物，没有成形的细胞核（原核生物），主要通过分裂生殖。真菌：既有单细胞（酵母菌）也有多细胞（蘑菇等），有真正的细胞核（真核生物），主要通过孢子繁殖。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_7', subject: 'sw8', question: '病毒的结构和繁殖方式是什么？', answer: '结构：没有细胞结构，由蛋白质外壳和内部的遗传物质（DNA或RNA）组成。繁殖方式：寄生在活细胞内，利用宿主细胞的物质和能量进行复制增殖（自我复制）。不能独立生活和繁殖。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_8', subject: 'sw8', question: '生物分类的七个等级是什么？', answer: '界、门、纲、目、科、属、种。种是最基本的分类单位，同种生物的亲缘关系最近。分类等级越高，包含的生物种类越多，共同特征越少。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_9', subject: 'sw8', question: '什么是生态系统的食物链和食物网？', answer: '食物链：生态系统中不同生物之间由于吃与被吃的关系形成的链状结构（如草→兔→狼）。食物网：多条食物链彼此交错连接形成的网状结构。有毒物质沿食物链富集，营养级越高体内有毒物质越多。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_10', subject: 'sw8', question: '生态系统的自我调节能力是什么？与什么因素有关？', answer: '生态系统具有一定的自动调节能力，使生态系统的各种成分保持在相对稳定的状态。一般来说，生态系统中生物种类越多、结构越复杂，自动调节能力越强。但这种调节能力是有限的，超出限度会破坏生态平衡。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_11', subject: 'sw8', question: '什么是基因、DNA和染色体？它们之间的关系是什么？', answer: '基因：有遗传效应的DNA片段，决定生物性状。DNA：主要的遗传物质，双螺旋结构。染色体：细胞核内被碱性染料染成深色的物质，由DNA和蛋白质组成。关系：染色体是DNA的载体，DNA上有基因，基因决定性状。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_sw8_12', subject: 'sw8', question: '自然选择学说的核心内容是什么？', answer: '由达尔文提出。核心内容：过度繁殖（生物产生大量后代）、生存斗争（资源有限导致竞争）、遗传变异（有利变异会遗传）、适者生存（适应环境的个体存活繁殖，不适应者被淘汰）。自然选择通过生存斗争实现。', tag: '生物', level: 0, lastReview: new Date().toISOString() },
 
-// ===== 数据 & 记忆曲线 =====
+  // ========== 八年级·道德与法治 ==========
+  { id: 'kp_df8_1', subject: 'df8', question: '我国的国家性质是什么？', answer: '中华人民共和国是工人阶级领导的、以工农联盟为基础的人民民主专政的社会主义国家。国家的一切权力属于人民。人民行使国家权力的机关是全国人民代表大会和地方各级人民代表大会。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_2', subject: 'df8', question: '公民的基本权利有哪些？', answer: '（1）政治权利和自由（选举权、被选举权、政治自由）；（2）人身自由（人身自由不受侵犯、人格尊严不受侵犯、住宅不受侵犯等）；（3）社会经济权利（财产权、劳动权、获得物质帮助权）；（4）文化教育权利（受教育权、科学研究与文学创作自由）；（5）其他权利。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_3', subject: 'df8', question: '公民的基本义务有哪些？', answer: '（1）遵守宪法和法律；（2）维护国家统一和民族团结；（3）维护国家安全、荣誉和利益；（4）依法服兵役；（5）依法纳税；（6）受教育的义务和劳动的义务等。权利和义务是统一的，不能只享有权利不履行义务。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_4', subject: 'df8', question: '我国的人民代表大会制度是什么？', answer: '人民代表大会制度是我国的根本政治制度。全国人大是最高国家权力机关，行使立法权、决定权、任免权和监督权。人民通过民主选举选出代表组成各级人民代表大会，代表人民行使国家权力。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_5', subject: 'df8', question: '宪法的地位和基本原则是什么？', answer: '宪法是国家的根本大法，具有最高的法律效力。基本原则：一切权利属于人民、保障公民权利和义务、社会主义法治原则等。宪法是一切组织和个人的根本活动准则。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_6', subject: 'df8', question: '什么是违法行为？违法行为的分类有哪些？', answer: '违法行为是指违反法律法规、危害社会的行为。分类：（1）按违反的法律：民事违法、行政违法、刑事违法（犯罪）。（2）按危害程度：一般违法和严重违法（犯罪）。无论哪种违法行为都要承担相应的法律责任。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_7', subject: 'df8', question: '犯罪的三个基本特征是什么？', answer: '（1）严重社会危害性（最本质特征）；（2）刑事违法性（法律标志）；（3）刑罚处罚性（必然后果）。三个特征相互联系、缺一不可。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_8', subject: 'df8', question: '我国的法律体系包括哪些主要法律？', answer: '宪法（根本大法）、刑法、民法典、行政法、经济法、社会法、诉讼与非诉讼程序法等。以宪法为核心，形成中国特色社会主义法律体系。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_9', subject: 'df8', question: '什么是社会公平？为什么要维护社会公平？', answer: '社会公平是指每个人在社会生活中都享有同等的权利和机会，得到公正的对待。维护社会公平有利于社会稳定，调动人们的积极性，促进社会和谐发展。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_10', subject: 'df8', question: '正义的重要性是什么？怎样做一个有正义感的人？', answer: '正义是社会制度的重要价值，是法治追求的基本目标。做法：（1）遵纪守法；（2）面对非正义行为敢于斗争；（3）讲究策略，见义"智"为；（4）从小事做起，维护社会正义。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_11', subject: 'df8', question: '国家机构有哪些？各有什么职能？', answer: '（1）全国人大（最高权力机关）；（2）国家主席（国家元首）；（3）国务院（最高行政机关）；（4）国家监察委（最高监察机关）；（5）最高人民法院（最高审判机关）；（6）最高人民检察院（最高法律监督机关）。', tag: '道法', level: 0, lastReview: new Date().toISOString() },
+  { id: 'kp_df8_12', subject: 'df8', question: '自由与法治的关系是什么？', answer: '自由不是为所欲为，是法律之内的自由。法治与自由相互联系、不可分割：法治标定了自由的界限（自由的实现不能触碰法律底线）；法治是自由的保障（人们合法的自由和权利不受非法干涉）。', tag: '道法', level: 0, lastReview: new Date().toISOString() }
+];
+
+const STORAGE_KEY = 'review_data_v2';
+const EXAM_KEY = 'review_exam_v2';
+
+// ===== 记忆曲线 =====
 const LEVELS = [
   { level: 0, label: '新学', interval: 0, color: '#94a3b8' },
   { level: 1, label: '熟悉中', interval: 1, color: '#f59e0b' },
@@ -481,6 +517,54 @@ function getNextReview(level, lastReview) {
   const lvl = LEVELS.find(l => l.level === level) || LEVELS[0];
   if (lvl.interval === 0) return new Date();
   const d = new Date(lastReview); d.setDate(d.getDate() + lvl.interval); return d;
+}
+
+// ===== 数据初始化 =====
+let data = { subjects: [], activeSubject: '', cards: [], examName: '', examDate: '' };
+let editingCardId = null;
+let reviewQueue = [], reviewIndex = 0, flipped = false;
+
+function initData() {
+  // 初始化学科
+  data.subjects = SUBJECTS.map(s => ({ ...s }));
+  data.activeSubject = SUBJECTS[0].id;
+
+  // 考试设置（默认当前日期+30天）
+  data.examName = localStorage.getItem(EXAM_KEY + '_name') || '📖 期末考';
+  let examDate = localStorage.getItem(EXAM_KEY + '_date');
+  if (!examDate) {
+    const d = new Date(); d.setDate(d.getDate() + 30);
+    examDate = d.toISOString().slice(0,10);
+    localStorage.setItem(EXAM_KEY + '_date', examDate);
+    localStorage.setItem(EXAM_KEY + '_name', data.examName);
+  }
+  data.examDate = examDate;
+
+  // 尝试从 localStorage 加载卡片进度
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      // 检查格式兼容性：如果是旧版（带账号系统的），忽略
+      if (parsed.cards && Array.isArray(parsed.cards)) {
+        data.cards = parsed.cards;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // 首次使用：用硬编码知识点初始化
+  data.cards = DEFAULT_KP.map(kp => ({
+    ...kp,
+    lastReview: new Date().toISOString()
+  }));
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    cards: data.cards
+  }));
 }
 
 function getSubject() { return data.subjects.find(s => s.id === data.activeSubject) || data.subjects[0]; }
@@ -499,9 +583,34 @@ function getDueCards() {
 function getCardLevelColor(level) { const l = LEVELS.find(x => x.level === level); return l ? l.color : '#94a3b8'; }
 function getCardLevelLabel(level) { const l = LEVELS.find(x => x.level === level); return l ? l.label : '新学'; }
 
-// ===== 复习 =====
-let reviewQueue = [], reviewIndex = 0, flipped = false;
+// ===== 导航 =====
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).style.display = 'block';
+  const btn = document.querySelector(`.tab-btn[onclick*="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+  if (tabName === 'review') startReview();
+  if (tabName === 'stats') { updateStats(); updateProgress(); }
+}
 
+// ===== 学科导航 =====
+function switchSubject(sid) {
+  data.activeSubject = sid;
+  document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.subject-btn[data-id="${sid}"]`);
+  if (btn) btn.classList.add('active');
+  const tab = document.querySelector('.tab-content[style*="block"]');
+  if (tab) {
+    const activeTab = ['review', 'manage', 'stats'].find(t => document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display === 'block');
+    if (activeTab === 'review') startReview();
+    if (activeTab === 'manage') renderCardList();
+    if (activeTab === 'stats') { updateStats(); updateProgress(); }
+  }
+  renderFilterSelects();
+}
+
+// ===== 复习 =====
 function startReview() {
   reviewQueue = getDueCards(); reviewIndex = 0; flipped = false;
   if (reviewQueue.length === 0) {
@@ -516,11 +625,10 @@ function showCard() {
     document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">🎉</div><p>今日复习完成！共复习 ' + reviewQueue.length + ' 个知识点</p></div>';
     return;
   }
-
   flipped = false;
   const card = reviewQueue[reviewIndex];
   const idx = data.cards.findIndex(c => c.id === card.id);
-  document.getElementById('reviewArea').innerHTML = '<div style="text-align:center;font-size:13px;color:var(--text-light);margin-bottom:8px">第 ' + (reviewIndex+1) + ' / ' + reviewQueue.length + ' 个 · <span style="color:' + getCardLevelColor(card.level) + '">' + getCardLevelLabel(card.level) + '</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard' + (flipped?' flipped':'') + '" id="flashcard"><div class="flashcard-face front"><div class="label">❓ 问题</div><div class="content">' + escapeHtml(card.question) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div><div class="flashcard-face back"><div class="label">💡 答案</div><div class="content">' + escapeHtml(card.answer) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div></div></div><div class="card-actions"><button class="btn-hard" onclick="rateCard(' + idx + ',0)">😅 没记住</button><button class="btn-good" onclick="rateCard(' + idx + ',1)">🤔 有点印象</button><button class="btn-easy" onclick="rateCard(' + idx + ',2)">😎 记住了</button></div>';
+  document.getElementById('reviewArea').innerHTML = '<div style="text-align:center;font-size:13px;color:var(--text-light);margin-bottom:8px">第 ' + (reviewIndex+1) + ' / ' + reviewQueue.length + ' 个 · <span style="color:' + getCardLevelColor(card.level) + '">' + getCardLevelLabel(card.level) + '</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard{#flipped#}" id="flashcard"><div class="flashcard-face front"><div class="label">❓ 问题</div><div class="content">' + escapeHtml(card.question) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div><div class="flashcard-face back"><div class="label">💡 答案</div><div class="content">' + escapeHtml(card.answer) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div></div></div><div class="card-actions"><button class="btn-hard" onclick="rateCard(' + idx + ',0)">😅 没记住</button><button class="btn-good" onclick="rateCard(' + idx + ',1)">🤔 有点印象</button><button class="btn-easy" onclick="rateCard(' + idx + ',2)">😎 记住了</button></div>';
 }
 
 function flipCard() {
@@ -534,17 +642,16 @@ function rateCard(idx, delta) {
   if (!card) return;
   card.lastReview = new Date().toISOString();
   card.level = Math.min(5, Math.max(0, card.level + delta));
-  saveUserData(currentUser, data);
+  saveData();
   reviewIndex++;
   showCard();
   updateStats();
   updateProgress();
 }
 
-// ===== 管理功能（管理员专用） =====
+// ===== 管理功能 =====
 function addCard(e) {
   e.preventDefault();
-  if (!isAdmin) return;
   const q = document.getElementById('qInput').value.trim();
   const a = document.getElementById('aInput').value.trim();
   const tag = document.getElementById('tagInput').value.trim() || '未分类';
@@ -559,22 +666,20 @@ function addCard(e) {
     level: 0,
     lastReview: new Date().toISOString()
   });
-  saveUserData(currentUser, data);
+  saveData();
   document.getElementById('qInput').value = '';
   document.getElementById('aInput').value = '';
   renderAll();
 }
 
 function deleteCard(id) {
-  if (!isAdmin) return;
   if (!confirm('删除这个知识点？')) return;
   data.cards = data.cards.filter(c => c.id !== id);
-  saveUserData(currentUser, data);
+  saveData();
   renderAll();
 }
 
 function openEditCardModal(id) {
-  if (!isAdmin) return;
   const card = data.cards.find(c => c.id === id);
   if (!card) return;
   editingCardId = id;
@@ -586,13 +691,13 @@ function openEditCardModal(id) {
 function closeEditCardModal() { document.getElementById('editCardModal').classList.remove('show'); editingCardId = null; }
 
 function saveEditedCard() {
-  if (!isAdmin || !editingCardId) return;
+  if (!editingCardId) return;
   const card = data.cards.find(c => c.id === editingCardId);
   if (!card) return;
   card.question = document.getElementById('editQInput').value.trim() || card.question;
   card.answer = document.getElementById('editAInput').value.trim() || card.answer;
   card.tag = document.getElementById('editTagInput').value.trim() || '未分类';
-  saveUserData(currentUser, data);
+  saveData();
   closeEditCardModal();
   renderAll();
 }
@@ -610,10 +715,7 @@ function renderCardList() {
     return;
   }
   container.innerHTML = cards.map(c => {
-    const actions = isAdmin
-      ? '<button class="edit-btn" onclick="openEditCardModal(\'' + c.id + '\')">✏️</button><button class="del-btn" onclick="deleteCard(\'' + c.id + '\')">✕</button>'
-      : '';
-    return '<div class="card-item"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' · ' + getCardLevelLabel(c.level) + '</div></div><div class="actions">' + actions + '</div></div>';
+    return '<div class="card-item"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' · ' + getCardLevelLabel(c.level) + '</div></div><div class="actions"><button class="edit-btn" onclick="openEditCardModal('{' + c.id + '}')">✏️</button><button class="del-btn" onclick="deleteCard('{' + c.id + '}')">✕</button></div></div>';
   }).join('');
 }
 
@@ -625,8 +727,6 @@ function renderFilterSelects() {
     const val = sel.value;
     sel.innerHTML = '<option value="">全部分类</option>' + tags.map(t => '<option value="' + t + '" ' + (t===val?'selected':'') + '>' + t + '</option>').join('');
   });
-  const allTags = [...new Set(data.cards.map(c => c.tag))];
-  document.getElementById('tagList').innerHTML = allTags.map(t => '<option value="' + t + '">').join('');
 }
 
 function updateProgress() {
@@ -634,8 +734,8 @@ function updateProgress() {
   const total = subjectCards.length;
   if (total === 0) { document.getElementById('progressFill').style.width = '0%'; return; }
   const now = new Date();
-  const due = subjectCards.filter(c => getNextReview(c.level, c.lastReview) <= now).length;
-  const pct = Math.round((total - due) / total * 100);
+  const done = subjectCards.filter(c => getNextReview(c.level, c.lastReview) > now).length;
+  const pct = Math.round(done / total * 100);
   document.getElementById('progressFill').style.width = Math.min(100, pct) + '%';
 }
 
@@ -650,145 +750,627 @@ function updateStats() {
   document.getElementById('tagStats').innerHTML = tags.length > 0
     ? tags.map(tag => {
         const cards = subjectCards.filter(c => c.tag === tag);
-        const mc = cards.filter(c => c.level >= 3).length;
-        const p = cards.length > 0 ? Math.round(mc / cards.length * 100) : 0;
-        return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="min-width:80px;font-size:13px">#' + tag + '</span><div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + p + '%;background:var(--primary);border-radius:4px;transition:width .3s"></div></div><span style="font-size:12px;color:var(--text-light);min-width:60px;text-align:right">' + mc + '/' + cards.length + '</span></div>';
+        const m = cards.filter(c => c.level >= 3).length;
+        return '<div class="tag-stat"><span>' + tag + '</span><span>' + cards.length + '个 · ' + Math.round(m/cards.length*100) + '%掌握</span></div>';
       }).join('')
-    : '<p style="font-size:13px;color:var(--text-light)">暂无分类数据</p>';
+    : '<div style="color:var(--text-light);font-size:14px">暂无分类数据</div>';
 }
 
-// ===== 导入导出 =====
-function exportData() {
-  if (!isAdmin) return;
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = '复习数据_' + new Date().toISOString().slice(0,10) + '.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-function importData(e) {
-  if (!isAdmin) return;
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    try {
-      const imported = JSON.parse(ev.target.result);
-      if (imported.cards && Array.isArray(imported.cards)) {
-        if (confirm('导入将覆盖当前数据，确定继续？')) { data = imported; saveUserData(currentUser, data); renderAll(); }
-      } else { alert('无效的数据格式'); }
-    } catch(e) { alert('文件解析失败'); }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
-}
-
-// ===== 工具 =====
-function escapeHtml(s) {
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ===== 学科系统 =====
 function renderSubjectNav() {
   const nav = document.getElementById('subjectNav');
-  nav.innerHTML = data.subjects.map(s => {
-    const count = getSubjectCards(s.id).length;
-    const cls = s.id === data.activeSubject ? 'subject-btn active' : 'subject-btn';
-    return '<button class="' + cls + '" onclick="switchSubject(\'' + s.id + '\')"><span class="subject-dot" style="background:' + s.color + '"></span>' + s.name + '<span style="font-size:11px;opacity:.7;margin-left:4px">' + count + '</span></button>';
-  }).join('');
-  if (isAdmin) {
-    nav.innerHTML += '<button class="subject-btn add-subject" onclick="openSubjectModal()">✚ 管理</button>';
+  nav.innerHTML = data.subjects.map(s => '<button class="subject-btn" data-id="' + s.id + '" onclick="switchSubject('{' + s.id + '}')" style="' + (s.id===data.activeSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
+}
+
+function renderAll() {
+  renderSubjectNav();
+  renderFilterSelects();
+  startReview();
+  const manageTab = document.getElementById('tabManage');
+  if (manageTab.style.display === 'block') renderCardList();
+  updateStats();
+  updateProgress();
+  updateExamCountdown();
+}
+
+function updateExamCountdown() {
+  const el = document.getElementById('examCountdown');
+  if (!el) return;
+  const now = new Date();
+  const exam = new Date(data.examDate);
+  const diff = Math.ceil((exam - now) / (1000*60*60*24));
+  if (diff < 0) el.textContent = '考试已结束';
+  else if (diff === 0) el.textContent = '考试就在今天！';
+  else el.textContent = '距离 ' + data.examName + ' 还有 ' + diff + ' 天';
+}
+
+function openExamModal() {
+  document.getElementById('examNameInput').value = data.examName;
+  document.getElementById('examDateInput').value = data.examDate;
+  document.getElementById('examModal').classList.add('show');
+}
+function closeExamModal() { document.getElementById('examModal').classList.remove('show'); }
+function saveExam() {
+  data.examName = document.getElementById('examNameInput').value.trim() || '考试';
+  data.examDate = document.getElementById('examDateInput').value;
+  localStorage.setItem(EXAM_KEY + '_name', data.examName);
+  localStorage.setItem(EXAM_KEY + '_date', data.examDate);
+  closeExamModal();
+  updateExamCountdown();
+}
+
+function openSubjectModal() {
+  const list = document.getElementById('subjectManageList');
+  list.innerHTML = data.subjects.map(s => '<div class="user-manage-item"><div class="info"><span style="font-weight:600">' + s.name + '</span><span style="color:' + s.color + ';font-size:13px">● ' + (getSubjectCards(s.id).length) + '个知识点</span></div></div>').join('');
+  document.getElementById('subjectModal').classList.add('show');
+}
+function closeSubjectModal() { document.getElementById('subjectModal').classList.remove('show'); }
+function addSubject() {
+  const nameInput = document.getElementById('newSubjectInput');
+  const name = nameInput.value.trim();
+  if (!name) return;
+  const colors = ['#4f46e5','#0891b2','#7c3aed','#db2777','#ea580c','#65a30d','#0369a1'];
+  const c = colors[data.subjects.length % colors.length];
+  data.subjects.push({ id: 'custom_' + Date.now(), name: name, color: c });
+  nameInput.value = '';
+  openSubjectModal();
+  renderSubjectNav();
+}
+
+// ===== 重置知识点 =====
+function resetToDefault() {
+  if (!confirm('重置所有知识点为初始状态？你的学习进度会丢失！')) return;
+  data.cards = DEFAULT_KP.map(kp => ({
+    ...kp,
+    level: 0,
+    lastReview: new Date().toISOString()
+  }));
+  saveData();
+  renderAll();
+  alert('已恢复为默认知识点');
+}
+
+// ===== 考试设置模态框 =====
+// examModal already exists in HTML
+
+// ===== 工具函数 =====
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// ===== 初始化 =====
+document.addEventListener('DOMContentLoaded', function() {
+  // 检查是否是旧版本数据，清理
+  const oldKeys = ['reviewUsers', 'reviewData_admin', 'reviewData_user1', 'reviewData_user2'];
+  oldKeys.forEach(k => localStorage.removeItem(k));
+
+  initData();
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appPage').style.display = 'block';
+  renderAll();
+});
+</script>
+</body>
+</html>
+
+// ============================================================
+// STATE
+// ============================================================
+let kpData = [];           // all knowledge points
+let currentSubject = 'all'; // selected subject filter
+let currentCardIndex = 0;
+let currentCardList = [];   // filtered due cards
+let isFlipped = false;
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Check localStorage
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    // First run: use hardcoded defaults
+    kpData = JSON.parse(JSON.stringify(DEFAULT_KP));
+    saveData();
+  } else {
+    try {
+      const parsed = JSON.parse(stored);
+      // Validate: if any kp has no 'subject' field, it's old format
+      if (parsed.length > 0 && !parsed[0].subject) {
+        kpData = JSON.parse(JSON.stringify(DEFAULT_KP));
+        saveData();
+      } else {
+        kpData = parsed;
+        // Ensure all kps have tag field
+        kpData.forEach(kp => {
+          if (!kp.tag) {
+            const subj = SUBJECTS.find(s => s.id === kp.subject);
+            kp.tag = subj ? subj.name.replace(/^[^·]+·/, '') : '未知';
+          }
+        });
+      }
+    } catch(e) {
+      kpData = JSON.parse(JSON.stringify(DEFAULT_KP));
+      saveData();
+    }
+  }
+  populateSubjectSelects();
+  renderSubjectNav();
+  renderReview();
+  renderManage();
+  renderStats();
+  updateCountdown();
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(kpData));
+}
+
+// ============================================================
+// SM-2 ALGORITHM
+// ============================================================
+function getInterval(level) {
+  const intervals = [0, 1, 3, 7, 14, 30]; // days
+  return level < intervals.length ? intervals[level] : 60;
+}
+
+function isDue(kp) {
+  if (kp.level === 0) return true; // never reviewed
+  const last = new Date(kp.lastReview);
+  const interval = getInterval(kp.level);
+  const due = new Date(last.getTime() + interval * 86400000);
+  return new Date() >= due;
+}
+
+function getSubjectColor(subjectId) {
+  const subj = SUBJECTS.find(s => s.id === subjectId);
+  return subj ? subj.color : '#64748b';
+}
+
+function getSubjectName(subjectId) {
+  const subj = SUBJECTS.find(s => s.id === subjectId);
+  return subj ? subj.name : '未知学科';
+}
+
+// ============================================================
+// SUBJECT NAV
+// ============================================================
+function renderSubjectNav() {
+  const nav = document.getElementById('subjectNav');
+  let html = '<span class="subject-tag all-tag active" data-subject="all">📚 全部</span>';
+  SUBJECTS.forEach(s => {
+    html += `<span class="subject-tag" data-subject="${s.id}" style="background:${s.color}">${s.name}</span>`;
+  });
+  nav.innerHTML = html;
+  nav.querySelectorAll('.subject-tag').forEach(el => {
+    el.addEventListener('click', () => {
+      nav.querySelectorAll('.subject-tag').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentSubject = el.dataset.subject;
+      // Reset review state
+      currentCardIndex = 0;
+      isFlipped = false;
+      renderReview();
+    });
+  });
+}
+
+// ============================================================
+// COUNTDOWN
+// ============================================================
+function updateCountdown() {
+  const examDateStr = localStorage.getItem(EXAM_KEY);
+  const numEl = document.getElementById('countdownNum');
+  if (!examDateStr) {
+    // Default: 30 days from now
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    const defaultStr = d.toISOString().slice(0, 10);
+    localStorage.setItem(EXAM_KEY, defaultStr);
+    document.getElementById('examDateInput').value = defaultStr;
+  } else {
+    document.getElementById('examDateInput').value = examDateStr;
+  }
+  updateCountdownDisplay();
+}
+
+function updateCountdownDisplay() {
+  const examDateStr = localStorage.getItem(EXAM_KEY);
+  const numEl = document.getElementById('countdownNum');
+  if (examDateStr) {
+    const exam = new Date(examDateStr);
+    const now = new Date();
+    const diff = Math.ceil((exam - now) / 86400000);
+    if (diff >= 0) {
+      numEl.textContent = diff;
+    } else {
+      numEl.textContent = '已过期';
+    }
   }
 }
 
-function switchSubject(id) { data.activeSubject = id; saveUserData(currentUser, data); renderAll(); }
-function openSubjectModal() { renderSubjectManageList(); document.getElementById('subjectModal').classList.add('show'); }
-function closeSubjectModal() { document.getElementById('subjectModal').classList.remove('show'); }
+// ============================================================
+// REVIEW TAB
+// ============================================================
+function renderReview() {
+  updateReviewStats();
+  updateCountdownDisplay();
 
-function renderSubjectManageList() {
-  const container = document.getElementById('subjectManageList');
-  container.innerHTML = data.subjects.map(s => {
-    const count = getSubjectCards(s.id).length;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><input type="color" value="' + s.color + '" onchange="updateSubjectColor(\'' + s.id + '\',this.value)" style="width:32px;height:32px;border:none;padding:0;cursor:pointer;border-radius:50%"><div><div style="font-weight:500;font-size:14px">' + s.name + '</div><div style="font-size:12px;color:var(--text-light)">' + count + ' 个知识点</div></div></div>' + (s.id !== 'default' ? '<button onclick="deleteSubject(\'' + s.id + '\')" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer">✕</button>' : '') + '</div>';
-  }).join('');
+  // Filter by subject
+  let filtered = (currentSubject === 'all')
+    ? kpData
+    : kpData.filter(kp => kp.subject === currentSubject);
+
+  // Due sorting: due items first, then by level
+  const dueItems = filtered.filter(kp => isDue(kp));
+  const notDue = filtered.filter(kp => !isDue(kp));
+  // Sort due items: new (level 0) first, then by level asc
+  dueItems.sort((a, b) => a.level - b.level);
+  currentCardList = [...dueItems, ...notDue];
+
+  const container = document.getElementById('reviewContainer');
+
+  // Search filter
+  const searchText = document.getElementById('reviewSearch').value.trim().toLowerCase();
+  if (searchText) {
+    currentCardList = currentCardList.filter(kp =>
+      kp.question.toLowerCase().includes(searchText) ||
+      kp.answer.toLowerCase().includes(searchText)
+    );
+  }
+
+  if (currentCardList.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🎉</div><p>当前学科暂无知识点</p></div>`;
+    return;
+  }
+
+  // Ensure index is in bounds
+  if (currentCardIndex >= currentCardList.length) currentCardIndex = 0;
+  if (currentCardIndex < 0) currentCardIndex = 0;
+
+  const kp = currentCardList[currentCardIndex];
+  const subjColor = getSubjectColor(kp.subject);
+  const subjName = getSubjectName(kp.subject);
+
+  container.innerHTML = `
+    <div class="card-progress">
+      ${currentCardIndex + 1} / ${currentCardList.length}
+      <span style="margin-left:12px;">🎯 Lv.${kp.level}</span>
+      ${isDue(kp) ? '<span style="margin-left:8px;color:#ef4444;">🔴 待复习</span>' : '<span style="margin-left:8px;color:#22c55e;">✅ 已掌握</span>'}
+    </div>
+    <div class="card-container">
+      <div class="card" id="flashcard">
+        <div class="card-face card-front">
+          <span class="card-badge" style="border:1px solid ${subjColor};color:${subjColor};">${subjName}</span>
+          <h3>${kp.question}</h3>
+          <div class="tap-hint">👆 点击翻转查看答案</div>
+        </div>
+        <div class="card-face card-back">
+          <span class="card-badge" style="border:1px solid ${subjColor};color:${subjColor};">${subjName}</span>
+          <div class="answer-text">${kp.answer}</div>
+          <div class="tap-hint" style="margin-top:16px;">👆 点击翻回</div>
+        </div>
+      </div>
+    </div>
+    <div class="rating-group" id="ratingGroup">
+      <button class="rating-btn r1" data-rating="1">😢 没记住</button>
+      <button class="rating-btn r2" data-rating="2">🤔 有点印象</button>
+      <button class="rating-btn r3" data-rating="3">😊 记住了</button>
+    </div>
+  `;
+
+  isFlipped = false;
+
+  // Card flip
+  document.getElementById('flashcard').addEventListener('click', function() {
+    this.classList.toggle('flipped');
+    isFlipped = !isFlipped;
+  });
+
+  // Rating buttons
+  document.querySelectorAll('.rating-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const rating = parseInt(this.dataset.rating);
+      handleRating(rating);
+    });
+  });
 }
 
-function addSubject() {
-  const input = document.getElementById('newSubjectInput');
-  const name = input.value.trim();
-  if (!name) return;
-  if (data.subjects.some(s => s.name === name)) { alert('该学科已存在'); return; }
-  const colors = ['#ef4444','#f59e0b','#22c55e','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
-  data.subjects.push({ id: 'subj_' + Date.now(), name, color: colors[data.subjects.length % colors.length] });
-  saveUserData(currentUser, data);
-  input.value = '';
-  renderSubjectManageList();
-  renderSubjectNav();
-}
-function updateSubjectColor(id, color) { const s = data.subjects.find(x => x.id === id); if (s) { s.color = color; saveUserData(currentUser, data); renderSubjectNav(); } }
-function deleteSubject(id) {
-  if (id === 'default') return;
-  const count = getSubjectCards(id).length;
-  if (count > 0 && !confirm('该学科有 ' + count + ' 个知识点，确定删除？（会移到「默认」学科）')) return;
-  data.cards.forEach(c => { if (c.subject === id) c.subject = 'default'; });
-  data.subjects = data.subjects.filter(s => s.id !== id);
-  if (data.activeSubject === id) data.activeSubject = 'default';
-  saveUserData(currentUser, data);
-  renderSubjectManageList();
-  renderAll();
+function handleRating(rating) {
+  const kp = currentCardList[currentCardIndex];
+  // Find original index in kpData
+  const idx = kpData.findIndex(d => d.id === kp.id);
+  if (idx === -1) return;
+
+  if (rating === 1) {
+    // Reset to level 0
+    kpData[idx].level = 0;
+  } else if (rating === 2) {
+    // Small increase
+    if (kpData[idx].level < 2) kpData[idx].level = 1;
+    else kpData[idx].level = Math.min(5, kpData[idx].level + 1);
+  } else if (rating === 3) {
+    // Larger increase
+    kpData[idx].level = Math.min(5, kpData[idx].level + 1);
+    if (kpData[idx].level === 0) kpData[idx].level = 2; // skip to level 2 on first "remembered"
+  }
+  kpData[idx].lastReview = new Date().toISOString();
+  saveData();
+
+  // Move to next card
+  currentCardIndex++;
+  if (currentCardIndex >= currentCardList.length) {
+    currentCardIndex = 0;
+  }
+  isFlipped = false;
+  renderReview();
+  renderManage();
+  renderStats();
 }
 
-// ===== 倒计时 =====
-function updateCountdown() {
-  const dn = document.getElementById('examNameDisplay');
-  const dd = document.getElementById('daysDisplay');
-  const de = document.getElementById('examDateDisplay');
-  if (data.examName) dn.textContent = '📖 ' + data.examName;
-  const now = new Date(); now.setHours(0,0,0,0);
-  const exam = new Date(data.examDate); exam.setHours(0,0,0,0);
-  const diff = Math.max(0, Math.round((exam - now) / 86400000));
-  dd.textContent = diff;
-  de.textContent = '📅 ' + data.examDate;
-}
-function showExamModal() { document.getElementById('examNameInput').value = data.examName || ''; document.getElementById('examDateInput').value = data.examDate || ''; document.getElementById('examModal').classList.add('show'); }
-function closeExamModal() { document.getElementById('examModal').classList.remove('show'); }
-function saveExam() { data.examName = document.getElementById('examNameInput').value || '📖 考试'; data.examDate = document.getElementById('examDateInput').value || new Date().toISOString().slice(0,10); saveUserData(currentUser, data); closeExamModal(); renderAll(); }
+// ============================================================
+// UPDATE REVIEW STATS
+// ============================================================
+function updateReviewStats() {
+  let filtered = (currentSubject === 'all')
+    ? kpData
+    : kpData.filter(kp => kp.subject === currentSubject);
+  document.getElementById('totalCount').textContent = kpData.length;
+  const dueCount = filtered.filter(kp => isDue(kp)).length;
+  document.getElementById('dueCount').textContent = dueCount;
+  const mastered = filtered.filter(kp => kp.level >= 5).length;
+  document.getElementById('masteredCount').textContent = mastered;
 
-// ===== 渲染 =====
-function renderAll() {
-  renderSubjectNav();
-  updateCountdown();
-  renderFilterSelects();
-  renderCardList();
-  updateStats();
-  updateProgress();
-  startReview();
+  // Today reviewed: items reviewed today
+  const today = new Date().toISOString().slice(0, 10);
+  const todayReviewed = kpData.filter(kp => kp.lastReview && kp.lastReview.slice(0, 10) === today).length;
+  document.getElementById('todayCount').textContent = todayReviewed;
+
+  // Mastery progress
+  const pct = kpData.length > 0 ? Math.round(mastered / kpData.length * 100) : 0;
+  document.getElementById('masteryPercent').textContent = pct;
+  document.getElementById('masteryProgress').style.width = pct + '%';
 }
 
-// ===== Tab 切换 =====
-document.querySelectorAll('.tabs button').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById('tab' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)).classList.add('active');
-    if (this.dataset.tab === 'review') startReview();
+// ============================================================
+// MANAGE TAB
+// ============================================================
+function populateSubjectSelects() {
+  const selects = ['addSubject', 'editSubject', 'manageSubjectFilter'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = id === 'manageSubjectFilter'
+      ? '<option value="all">全部学科</option>'
+      : '';
+    SUBJECTS.forEach(s => {
+      sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    });
+  });
+}
+
+function renderManage() {
+  const list = document.getElementById('manageList');
+  const searchText = document.getElementById('manageSearch').value.trim().toLowerCase();
+  const filterSubj = document.getElementById('manageSubjectFilter').value;
+
+  let filtered = kpData.slice();
+  if (filterSubj !== 'all') {
+    filtered = filtered.filter(kp => kp.subject === filterSubj);
+  }
+  if (searchText) {
+    filtered = filtered.filter(kp =>
+      kp.question.toLowerCase().includes(searchText) ||
+      kp.answer.toLowerCase().includes(searchText)
+    );
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><p>暂无知识点</p></div>`;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(kp => {
+    const color = getSubjectColor(kp.subject);
+    const name = getSubjectName(kp.subject);
+    html += `
+      <div class="knowledge-item" style="border-left-color:${color};">
+        <div class="ki-header">
+          <div style="flex:1;">
+            <div class="ki-question">${kp.question}</div>
+            <div class="ki-answer">${kp.answer}</div>
+            <div class="ki-meta">
+              <span class="ki-color-dot" style="background:${color};"></span>
+              ${name}
+              <span>Lv.${kp.level}</span>
+              <span>${kp.lastReview ? kp.lastReview.slice(0,10) : '未复习'}</span>
+            </div>
+          </div>
+          <div class="ki-actions">
+            <button class="btn-edit" data-id="${kp.id}">✏️</button>
+            <button class="btn-del" data-id="${kp.id}">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+
+  // Edit buttons
+  list.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const kp = kpData.find(d => d.id === id);
+      if (kp) openEditModal(kp);
+    });
+  });
+
+  // Delete buttons
+  list.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (confirm('确定要删除这个知识点吗？')) {
+        kpData = kpData.filter(d => d.id !== id);
+        saveData();
+        renderManage();
+        renderReview();
+        renderStats();
+      }
+    });
+  });
+}
+
+// ============================================================
+// ADD KNOWLEDGE POINT
+// ============================================================
+document.getElementById('addSaveBtn').addEventListener('click', () => {
+  const subj = document.getElementById('addSubject').value;
+  const question = document.getElementById('addQuestion').value.trim();
+  const answer = document.getElementById('addAnswer').value.trim();
+  if (!subj || !question || !answer) {
+    alert('请填写完整信息');
+    return;
+  }
+  const subjObj = SUBJECTS.find(s => s.id === subj);
+  const newKp = {
+    id: 'kp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    subject: subj,
+    question: question,
+    answer: answer,
+    tag: subjObj ? subjObj.name.replace(/^[^·]+·/, '') : '未知',
+    level: 0,
+    lastReview: new Date().toISOString()
+  };
+  kpData.push(newKp);
+  saveData();
+  document.getElementById('addQuestion').value = '';
+  document.getElementById('addAnswer').value = '';
+  renderManage();
+  renderReview();
+  renderStats();
+});
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+let editingId = null;
+
+function openEditModal(kp) {
+  editingId = kp.id;
+  document.getElementById('editSubject').value = kp.subject;
+  document.getElementById('editQuestion').value = kp.question;
+  document.getElementById('editAnswer').value = kp.answer;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+document.getElementById('editSaveBtn').addEventListener('click', () => {
+  const subj = document.getElementById('editSubject').value;
+  const question = document.getElementById('editQuestion').value.trim();
+  const answer = document.getElementById('editAnswer').value.trim();
+  if (!subj || !question || !answer) {
+    alert('请填写完整信息');
+    return;
+  }
+  const idx = kpData.findIndex(d => d.id === editingId);
+  if (idx !== -1) {
+    const subjObj = SUBJECTS.find(s => s.id === subj);
+    kpData[idx].subject = subj;
+    kpData[idx].question = question;
+    kpData[idx].answer = answer;
+    kpData[idx].tag = subjObj ? subjObj.name.replace(/^[^·]+·/, '') : '未知';
+    saveData();
+    renderManage();
+    renderReview();
+    renderStats();
+  }
+  document.getElementById('editModal').classList.add('hidden');
+  editingId = null;
+});
+
+document.getElementById('editCancelBtn').addEventListener('click', () => {
+  document.getElementById('editModal').classList.add('hidden');
+  editingId = null;
+});
+
+// ============================================================
+// STATS TAB
+// ============================================================
+function renderStats() {
+  const total = kpData.length;
+  const mastered = kpData.filter(kp => kp.level >= 5).length;
+  const learning = kpData.filter(kp => kp.level > 0 && kp.level < 5).length;
+  const newItems = kpData.filter(kp => kp.level === 0).length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statMastered').textContent = mastered;
+  document.getElementById('statLearning').textContent = learning;
+  document.getElementById('statNew').textContent = newItems;
+
+  const listDiv = document.getElementById('subjectStatsList');
+  let html = '';
+  SUBJECTS.forEach(subj => {
+    const items = kpData.filter(kp => kp.subject === subj.id);
+    const m = items.filter(kp => kp.level >= 5).length;
+    const pct = items.length > 0 ? Math.round(m / items.length * 100) : 0;
+    html += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;">
+        <span style="width:12px;height:12px;border-radius:50%;background:${subj.color};display:inline-block;flex-shrink:0;"></span>
+        <span style="flex:1;">${subj.name}</span>
+        <span>${m}/${items.length}</span>
+        <span style="font-weight:600;color:${subj.color};">${pct}%</span>
+        <div style="flex:0 0 100px;background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${subj.color};border-radius:6px;transition:width 0.3s;"></div>
+        </div>
+      </div>
+    `;
+  });
+  listDiv.innerHTML = html;
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'stats') renderStats();
+    if (btn.dataset.tab === 'manage') renderManage();
+    if (btn.dataset.tab === 'review') renderReview();
   });
 });
 
-document.getElementById('reviewFilter').addEventListener('change', startReview);
-document.getElementById('manageFilter').addEventListener('change', renderCardList);
-document.getElementById('manageSearch').addEventListener('input', renderCardList);
-document.getElementById('subjectModal').addEventListener('click', function(e) { if (e.target === this) closeSubjectModal(); });
-document.getElementById('examModal').addEventListener('click', function(e) { if (e.target === this) closeExamModal(); });
-document.getElementById('editCardModal').addEventListener('click', function(e) { if (e.target === this) closeEditCardModal(); });
-document.getElementById('userManageModal').addEventListener('click', function(e) { if (e.target === this) closeUserManageModal(); });
-document.getElementById('logoutModal').addEventListener('click', function(e) { if (e.target === this) closeLogoutModal(); });
-document.getElementById('newSubjectInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') addSubject(); });
-document.getElementById('addForm').addEventListener('submit', addCard);
+// ============================================================
+// SEARCH EVENT LISTENERS
+// ============================================================
+document.getElementById('reviewSearch').addEventListener('input', () => {
+  currentCardIndex = 0;
+  renderReview();
+});
 
-renderUserSelect();
+document.getElementById('manageSearch').addEventListener('input', () => renderManage());
+document.getElementById('manageSubjectFilter').addEventListener('change', () => renderManage());
+
+// ============================================================
+// EXAM DATE
+// ============================================================
+document.getElementById('setExamDateBtn').addEventListener('click', () => {
+  const val = document.getElementById('examDateInput').value;
+  if (val) {
+    localStorage.setItem(EXAM_KEY, val);
+    updateCountdownDisplay();
+  }
+});
+
+// ============================================================
+// START
+// ============================================================
+init();
 </script>
 </body>
 </html>
