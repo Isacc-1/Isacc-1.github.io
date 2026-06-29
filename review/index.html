@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>知识点复习 · Isaac1</title>
 <style>
+
   :root {
     --primary: #4f46e5;
     --primary-light: #818cf8;
@@ -28,22 +26,6 @@
     line-height: 1.6;
   }
   .container { max-width: 720px; margin: 0 auto; padding: 16px; }
-
-  /* 登录页 */
-  .login-page { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-  .login-box { background:var(--card-bg); border-radius:20px; padding:40px 32px; box-shadow:0 4px 24px rgba(0,0,0,.1); width:100%; max-width:360px; text-align:center; }
-  .login-box h1 { font-size:24px; margin-bottom:4px; }
-  .login-box .sub { color:var(--text-light); font-size:14px; margin-bottom:24px; }
-  .login-box label { display:block; text-align:left; font-size:13px; color:var(--text-light); margin-bottom:4px; }
-  .login-box input { width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; font-size:15px; margin-bottom:16px; outline:none; }
-  .login-box input:focus { border-color:var(--primary); }
-  .login-box .login-btn { width:100%; padding:14px; background:var(--primary); color:white; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; }
-  .login-box .login-btn:hover { background:var(--primary-light); }
-  .login-box .login-err { color:var(--danger); font-size:13px; margin-bottom:12px; min-height:20px; }
-
-  .user-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:20px 0; }
-  .user-grid button { padding:14px; border:2px solid var(--border); border-radius:12px; background:var(--card-bg); font-size:15px; font-weight:500; cursor:pointer; transition:.15s; color:var(--text); }
-  .user-grid button:hover { border-color:var(--primary-light); }
 
   .app-page { display:none; }
 
@@ -152,171 +134,109 @@
     .flashcard-face .content { font-size:16px; }
     .user-grid { grid-template-columns:1fr; }
   }
+
+.app-page { display:block; }
 </style>
 </head>
 <body>
-
-<!-- ===== 登录页 ===== -->
-<div class="login-page" id="loginPage">
-  <div class="login-box">
-    <h1>📚 知识点复习</h1>
-    <div class="sub">Isaac1 · 学习助手</div>
-    <div id="loginError" class="login-err"></div>
-    <div id="userSelectArea"></div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
-    <div style="text-align:left">
-      <label>或手动输入</label>
-      <input id="loginManualInput" placeholder="用户名 (如 user1)" value="">
-      <label>密码</label>
-      <input id="loginPwdInput" type="password" placeholder="管理员输入密码" value="">
-      <button class="login-btn" onclick="manualLogin()">登录</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== 主界面 ===== -->
 <div class="app-page" id="appPage">
 <div class="header">
   <div class="header-row"><h1>📚 知识点复习</h1></div>
-  <div class="subtitle" id="loginStatusBar" onclick="showLogoutConfirm()">按记忆曲线安排复习</div>
+  <div class="subtitle" id="examCountdown">按记忆曲线安排复习</div>
 </div>
 <div class="container">
   <div class="subject-nav" id="subjectNav"></div>
-
   <div class="countdown-box" id="countdownBox">
     <div class="exam-name" id="examNameDisplay">📖 设置考试</div>
     <div class="days" id="daysDisplay">--</div>
     <div class="days-label">天后考试</div>
     <div class="exam-date" id="examDateDisplay"></div>
-    <button class="edit-btn" onclick="showExamModal()">✏️ 设置考试</button>
+    <button class="edit-btn" onclick="openExamModal()">✏️ 设置考试</button>
   </div>
-
   <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-
   <div class="tabs">
-    <button class="active" data-tab="review">📖 复习</button>
-    <button data-tab="manage">📋 管理</button>
-    <button data-tab="stats">📊 统计</button>
+    <button class="tab-btn active" onclick="switchTab('review')">📖 复习</button>
+    <button class="tab-btn" onclick="switchTab('manage')">📋 管理</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 统计</button>
   </div>
-
-  <div class="tab-content active" id="tabReview">
+  <div class="tab-content" id="tabReview" style="display:block">
     <div class="filter-bar"><select id="reviewFilter"></select></div>
     <div id="reviewArea"><div class="empty-state"><div class="emoji">🎉</div><p>暂无待复习知识点</p></div></div>
   </div>
-
   <div class="tab-content" id="tabManage">
-
-
     <div class="form-box" id="addFormBox">
       <h3>✏️ 手动添加知识点</h3>
-      <form id="addForm">
+      <form id="addForm" onsubmit="addCard(event)">
         <label>知识点（问题/标题）</label>
         <textarea id="qInput" rows="2" placeholder="例如：TCP 三次握手的过程" required></textarea>
         <label>详细内容（答案）</label>
         <textarea id="aInput" rows="4" placeholder="详细写下你的理解..." required></textarea>
         <label>分类标签</label>
-        <input id="tagInput" placeholder="例如：计算机网络" list="tagList">
-        <datalist id="tagList"></datalist>
-        <button type="submit">➕ 添加知识点</button>
+        <input id="tagInput" placeholder="例如：计算机网络（选填）">
+        <button class="submit-btn" type="submit">添加</button>
       </form>
     </div>
-    <div class="filter-bar">
+    <div class="manage-tools">
       <select id="manageFilter"><option value="">全部分类</option></select>
-      <input id="manageSearch" placeholder="🔍 搜索...">
+      <input id="manageSearch" placeholder="🔍 搜索..." oninput="renderCardList()">
+      <button onclick="openSubjectModal()">📚 学科</button>
+      <button onclick="resetToDefault()">🔄 重置</button>
     </div>
-    <div class="import-export" id="importExportBar">
-      <button onclick="exportData()">📤 导出</button>
-      <button onclick="document.getElementById('importFile').click()">📥 导入</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-    </div>
-    <div id="cardList" class="card-list"></div>
+    <div class="card-list" id="cardList"><div class="empty-state"><p>暂无知识点</p></div></div>
   </div>
-
   <div class="tab-content" id="tabStats">
     <div class="stats-grid" id="statsGrid"></div>
-    <div style="margin-top:16px">
-      <h3 style="font-size:15px;margin-bottom:8px">📈 各分类掌握度</h3>
-      <div id="tagStats"></div>
-    </div>
+    <h3 style="font-size:15px;margin-bottom:8px">📂 分类掌握度</h3>
+    <div class="tag-stats" id="tagStats"></div>
   </div>
 </div>
 </div>
-
-<!-- ===== 弹窗 ===== -->
-<div class="modal-overlay" id="examModal">
-  <div class="modal">
-    <h3>📅 设置考试</h3>
-    <label style="font-size:13px;color:var(--text-light)">考试名称</label>
-    <input id="examNameInput" placeholder="例如：期末考">
-    <label style="font-size:13px;color:var(--text-light)">考试日期</label>
-    <input id="examDateInput" type="date">
-    <div class="actions">
-      <button class="btn-cancel" onclick="closeExamModal()">取消</button>
-      <button class="btn-confirm" onclick="saveExam()">保存</button>
+<div class="modal" id="examModal">
+  <div class="modal-content">
+    <h2>📅 设置考试</h2>
+    <form onsubmit="saveExam();return false">
+      <label>考试名称</label>
+      <input id="examNameInput" placeholder="例如：期末考" value="期末考">
+      <label>考试日期</label>
+      <input id="examDateInput" type="date">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="modal-btn" type="submit">保存</button>
+        <button class="modal-close" type="button" onclick="closeExamModal()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal" id="editCardModal">
+  <div class="modal-content">
+    <h2>✏️ 编辑知识点</h2>
+    <form onsubmit="saveEditedCard();return false">
+      <label>问题</label>
+      <textarea id="editQInput" rows="2" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;margin-bottom:12px;font-family:inherit;outline:none"></textarea>
+      <label>答案</label>
+      <textarea id="editAInput" rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;margin-bottom:12px;font-family:inherit;outline:none"></textarea>
+      <label>分类标签</label>
+      <input id="editTagInput" placeholder="例如：计算机网络" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none">
+      <div style="display:flex;gap:8px">
+        <button class="modal-btn" type="submit">保存</button>
+        <button class="modal-close" type="button" onclick="closeEditCardModal()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal" id="subjectModal">
+  <div class="modal-content">
+    <h2>📚 学科列表</h2>
+    <div id="subjectManageList"></div>
+    <div style="margin-top:12px">
+      <input id="newSubjectInput" placeholder="新增学科名称（仅前端展示）" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="modal-btn" onclick="addSubject()">添加学科</button>
+        <button class="modal-close" onclick="closeSubjectModal()">关闭</button>
+      </div>
     </div>
   </div>
 </div>
-
-<div class="modal-overlay" id="subjectModal">
-  <div class="modal">
-    <h3>📂 管理学科</h3>
-    <div id="subjectManageList" style="margin-bottom:12px"></div>
-    <div style="display:flex;gap:8px">
-      <input id="newSubjectInput" placeholder="新学科名称" style="flex:1">
-      <button class="btn-confirm" onclick="addSubject()" style="padding:10px 16px;border:none;border-radius:8px;background:var(--primary);color:white;font-size:14px;font-weight:500;cursor:pointer">添加</button>
-    </div>
-    <div class="actions" style="margin-top:12px">
-      <button class="btn-cancel" onclick="closeSubjectModal()" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;background:var(--border);color:var(--text)">完成</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="userManageModal">
-  <div class="modal">
-    <h3>👥 用户管理</h3>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:12px">管理员可重置普通用户密码</p>
-    <div id="userManageList"></div>
-    <div class="actions" style="margin-top:12px">
-      <button class="btn-cancel" onclick="closeUserManageModal()" style="flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;background:var(--border);color:var(--text)">完成</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="logoutModal">
-  <div class="modal">
-    <h3>🔒 切换账号</h3>
-    <p style="font-size:14px;color:var(--text-light);margin-bottom:12px">当前：<span id="logoutCurrentUser"></span></p>
-    <div class="actions" style="flex-direction:column;gap:8px">
-      <button class="btn-confirm" onclick="logout()" style="width:100%;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;background:var(--primary);color:white">退出登录</button>
-      <button class="btn-cancel" onclick="closeLogoutModal()" style="width:100%;padding:12px;border:none;border-radius:10px;font-size:15px;cursor:pointer;background:var(--border);color:var(--text)">取消</button>
-    </div>
-    <div id="adminTools" style="display:none;margin-top:16px">
-      <hr style="border:none;border-top:1px solid var(--border);margin-bottom:12px">
-      <button onclick="openUserManageModal()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;background:var(--card-bg);color:var(--text)">👥 管理用户</button>
-      <button onclick="openSubjectModal()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;background:var(--card-bg);color:var(--text);margin-top:8px">📂 管理学科</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="editCardModal">
-  <div class="modal">
-    <h3>✏️ 编辑知识点</h3>
-    <label style="font-size:13px;color:var(--text-light)">问题</label>
-    <textarea id="editQInput" rows="2"></textarea>
-    <label style="font-size:13px;color:var(--text-light)">答案</label>
-    <textarea id="editAInput" rows="4"></textarea>
-    <label style="font-size:13px;color:var(--text-light)">分类标签</label>
-    <input id="editTagInput">
-    <div class="actions">
-      <button class="btn-cancel" onclick="closeEditCardModal()">取消</button>
-      <button class="btn-confirm" onclick="saveEditedCard()">保存</button>
-    </div>
-  </div>
-</div>
-
-
 <script>
-// ===== 学科和知识点（硬编码） =====
 const SUBJECTS = [
   { id: 'yu7', name: '七年级·语文', color: '#ef4444' },
   { id: 'shu7', name: '七年级·数学', color: '#3b82f6' },
@@ -547,51 +467,43 @@ const DEFAULT_KP = [
   { id: 'kp_df8_12', subject: 'df8', question: '自由与法治的关系是什么？', answer: '自由不是为所欲为，是法律之内的自由。法治与自由相互联系、不可分割：法治标定了自由的界限（自由的实现不能触碰法律底线）；法治是自由的保障（人们合法的自由和权利不受非法干涉）。', tag: '道法', level: 0, lastReview: new Date().toISOString() }
 ];
 
+
 const STORAGE_KEY = 'review_data_v2';
 const EXAM_KEY = 'review_exam_v2';
-
 const LEVELS = [
-  { level: 0, label: '\u65b0\u5b66', interval: 0, color: '#94a3b8' },
-  { level: 1, label: '\u719f\u6089\u4e2d', interval: 1, color: '#f59e0b' },
-  { level: 2, label: '\u5df2\u638c\u63e1', interval: 3, color: '#22c55e' },
-  { level: 3, label: '\u719f\u7ec3', interval: 7, color: '#16a34a' },
-  { level: 4, label: '\u5de9\u56fa', interval: 14, color: '#15803d' },
-  { level: 5, label: '\u5df2\u7262\u8bb0', interval: 30, color: '#166534' },
+  { level: 0, label: '新学', interval: 0, color: '#94a3b8' },
+  { level: 1, label: '熟悉中', interval: 1, color: '#f59e0b' },
+  { level: 2, label: '已掌握', interval: 3, color: '#22c55e' },
+  { level: 3, label: '熟练', interval: 7, color: '#16a34a' },
+  { level: 4, label: '巩固', interval: 14, color: '#15803d' },
+  { level: 5, label: '已牢记', interval: 30, color: '#166534' },
 ];
-
-
 function getNextReview(level, lastReview) {
   const lvl = LEVELS.find(l => l.level === level) || LEVELS[0];
   if (lvl.interval === 0) return new Date();
   const d = new Date(lastReview); d.setDate(d.getDate() + lvl.interval); return d;
 }
-
 let cards = [];
 let currentSubject = null;
 let reviewQueue = [];
 let reviewIndex = 0;
 let flipped = false;
 let editingCardId = null;
-
 function initData() {
   currentSubject = SUBJECTS[0].id;
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
+    try { const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) { cards = parsed; return; }
     } catch(e) {}
   }
   cards = DEFAULT_KP.map(kp => ({ ...kp, lastReview: new Date().toISOString() }));
   saveData();
 }
-
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(cards)); }
-
 function getSubject() { return SUBJECTS.find(s => s.id === currentSubject) || SUBJECTS[0]; }
 function getSubjectCards(sid) { return cards.filter(c => c.subject === sid); }
 function getActiveSubjectCards() { return getSubjectCards(currentSubject); }
-
 function getDueCards() {
   const now = new Date();
   const filter = document.getElementById('reviewFilter').value;
@@ -600,26 +512,28 @@ function getDueCards() {
     return getNextReview(c.level, c.lastReview) <= now;
   });
 }
-
 function getCardLevelColor(level) { const l = LEVELS.find(x => x.level === level); return l ? l.color : '#94a3b8'; }
 function getCardLevelLabel(level) { const l = LEVELS.find(x => x.level === level); return l ? l.label : '新学'; }
-
 function switchTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  const tabId = 'tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
-  const tabEl = document.getElementById(tabId);
-  if (tabEl) tabEl.style.display = 'block';
-  const btn = document.querySelector(".tab-btn[onclick*='" + tabName + "']");
-  if (btn) btn.classList.add('active');
+  const map = { review: 'tabReview', manage: 'tabManage', stats: 'tabStats' };
+  const el = document.getElementById(map[tabName]);
+  if (el) el.style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const t = b.textContent.trim();
+    if (tabName==='review' && t.includes('复习')) b.classList.add('active');
+    if (tabName==='manage' && t.includes('管理')) b.classList.add('active');
+    if (tabName==='stats' && t.includes('统计')) b.classList.add('active');
+  });
   if (tabName === 'review') startReview();
+  if (tabName === 'manage') renderCardList();
   if (tabName === 'stats') { updateStats(); updateProgress(); }
 }
-
 function switchSubject(sid) {
   currentSubject = sid;
   document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(".subject-btn[data-id='" + sid + "']");
+  const btn = document.querySelector('.subject-btn[data-id="' + sid + '"]');
   if (btn) btn.classList.add('active');
   renderFilterSelects();
   const visibleTab = document.querySelector('.tab-content[style*="block"]');
@@ -630,33 +544,32 @@ function switchSubject(sid) {
     if (id === 'stats') { updateStats(); updateProgress(); }
   }
 }
-
 function startReview() {
   reviewQueue = getDueCards(); reviewIndex = 0; flipped = false;
   if (reviewQueue.length === 0) {
-    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">\ud83c\udf89</div><p>暂无待复习知识点</p></div>';
+    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">🎉</div><p>暂无待复习知识点</p></div>';
     return;
   }
   showCard();
 }
-
 function showCard() {
   if (reviewIndex >= reviewQueue.length) {
-    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">\ud83c\udf89</div><p>今日复习完成！共复习 ' + reviewQueue.length + ' 个知识点</p></div>';
+    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">🎉</div><p>今日复习完成！共复习 ' + reviewQueue.length + ' 个知识点</p></div>';
     return;
   }
   flipped = false;
   const card = reviewQueue[reviewIndex];
   const idx = cards.findIndex(c => c.id === card.id);
-  document.getElementById('reviewArea').innerHTML = '<div style="text-align:center;font-size:13px;color:var(--text-light);margin-bottom:8px">第 ' + (reviewIndex+1) + ' / ' + reviewQueue.length + ' 个 \u00b7 <span style="color:' + getCardLevelColor(card.level) + '">' + getCardLevelLabel(card.level) + '</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard' + (flipped?' flipped':'') + '" id="flashcard"><div class="flashcard-face front"><div class="label">\u2753 问题</div><div class="content">' + escapeHtml(card.question) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div><div class="flashcard-face back"><div class="label">\ud83d\udca1 答案</div><div class="content">' + escapeHtml(card.answer) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div></div></div><div class="card-actions"><button class="btn-hard" onclick="rateCard(' + idx + ',0)">\ud83d\ude05 没记住</button><button class="btn-good" onclick="rateCard(' + idx + ',1)">\ud83e\udd14 有点印象</button><button class="btn-easy" onclick="rateCard(' + idx + ',2)">\ud83d\ude0e 记住了</button></div>';
+  document.getElementById('reviewArea').innerHTML =
+    '<div style="text-align:center;font-size:13px;color:var(--text-light);margin-bottom:8px">第 ' + (reviewIndex+1) + ' / ' + reviewQueue.length + ' 个 · <span style="color:' + getCardLevelColor(card.level) + '">' + getCardLevelLabel(card.level) + '</span></div>' +
+    '<div class="flashcard-container" onclick="flipCard()"><div class="flashcard" id="flashcard"><div class="flashcard-face front"><div class="label">❓ 问题</div><div class="content">' + escapeHtml(card.question) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div><div class="flashcard-face back"><div class="label">💡 答案</div><div class="content">' + escapeHtml(card.answer) + '</div><div class="tag">#' + escapeHtml(card.tag || '未分类') + '</div></div></div></div>' +
+    '<div class="card-actions"><button class="btn-hard" onclick="rateCard(' + idx + ',0)">😅 没记住</button><button class="btn-good" onclick="rateCard(' + idx + ',1)">🤔 有点印象</button><button class="btn-easy" onclick="rateCard(' + idx + ',2)">😎 记住了</button></div>';
 }
-
 function flipCard() {
   flipped = !flipped;
   const el = document.getElementById('flashcard');
   if (el) el.classList.toggle('flipped');
 }
-
 function rateCard(idx, delta) {
   const card = cards[idx];
   if (!card) return;
@@ -668,7 +581,6 @@ function rateCard(idx, delta) {
   updateStats();
   updateProgress();
 }
-
 function addCard(e) {
   e.preventDefault();
   const q = document.getElementById('qInput').value.trim();
@@ -678,26 +590,20 @@ function addCard(e) {
   const subject = getSubject();
   cards.push({
     id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
-    subject: subject.id,
-    question: q,
-    answer: a,
-    tag: tag,
-    level: 0,
-    lastReview: new Date().toISOString()
+    subject: subject.id, question: q, answer: a, tag: tag,
+    level: 0, lastReview: new Date().toISOString()
   });
   saveData();
   document.getElementById('qInput').value = '';
   document.getElementById('aInput').value = '';
   renderAll();
 }
-
 function deleteCard(id) {
   if (!confirm('删除这个知识点？')) return;
   cards = cards.filter(c => c.id !== id);
   saveData();
   renderAll();
 }
-
 function openEditCardModal(id) {
   const card = cards.find(c => c.id === id);
   if (!card) return;
@@ -707,9 +613,7 @@ function openEditCardModal(id) {
   document.getElementById('editTagInput').value = card.tag || '';
   document.getElementById('editCardModal').classList.add('show');
 }
-
 function closeEditCardModal() { document.getElementById('editCardModal').classList.remove('show'); editingCardId = null; }
-
 function saveEditedCard() {
   if (!editingCardId) return;
   const card = cards.find(c => c.id === editingCardId);
@@ -721,36 +625,33 @@ function saveEditedCard() {
   closeEditCardModal();
   renderAll();
 }
-
 function renderCardList() {
   const subjectCards = getActiveSubjectCards();
   const filter = document.getElementById('manageFilter').value;
   const search = document.getElementById('manageSearch').value.toLowerCase();
   let filtered = subjectCards;
-  if (filter) filtered = filtered.filter(c => c.tag === filter);
-  if (search) filtered = filtered.filter(c => c.question.toLowerCase().includes(search) || c.answer.toLowerCase().includes(search));
+  if (filter) filtered = filtered.filter(function(c){ return c.tag === filter; });
+  if (search) filtered = filtered.filter(function(c){ return c.question.toLowerCase().includes(search) || c.answer.toLowerCase().includes(search); });
   const container = document.getElementById('cardList');
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty-state"><p>暂无知识点</p></div>';
     return;
   }
-  container.innerHTML = filtered.map(c => '<div class="card-item"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' \u00b7 ' + getCardLevelLabel(c.level) + '</div></div><div class="actions"><button class="edit-btn" onclick="openEditCardModal(\'' + c.id + '\')">\u270f\ufe0f</button><button class="del-btn" onclick="deleteCard(\'' + c.id + '\')">\u2715</button></div></div>').join('');
+  container.innerHTML = filtered.map(function(c){
+    return '<div class="card-item"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' \u00b7 ' + getCardLevelLabel(c.level) + '</div></div><div class="actions"><button class="edit-btn" onclick="openEditCardModal(\'' + c.id + '\')">\u270f\ufe0f</button><button class="del-btn" onclick="deleteCard(\'' + c.id + '\')">\u2715</button></div></div>';
+  }).join('');
 }
 
 function renderFilterSelects() {
-  const subjectCards = getActiveCardTags();
+  const tags = getActiveCardTags();
   ['reviewFilter', 'manageFilter'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
-    sel.innerHTML = '<option value="">全部分类</option>' + subjectCards.map(t => '<option value="' + t + '" ' + (t===val?'selected':'') + '>' + t + '</option>').join('');
+    sel.innerHTML = '<option value="">全部分类</option>' + tags.map(t => '<option value="' + t + '" ' + (t===val?'selected':'') + '>' + t + '</option>').join('');
   });
 }
-
-function getActiveCardTags() {
-  return [...new Set(getActiveSubjectCards().map(c => c.tag))];
-}
-
+function getActiveCardTags() { return [...new Set(getActiveSubjectCards().map(c => c.tag))]; }
 function updateProgress() {
   const subjectCards = getActiveSubjectCards();
   const total = subjectCards.length;
@@ -761,7 +662,6 @@ function updateProgress() {
   const el = document.getElementById('progressFill');
   if (el) el.style.width = Math.min(100, pct) + '%';
 }
-
 function updateStats() {
   const subjectCards = getActiveSubjectCards();
   const total = subjectCards.length;
@@ -771,25 +671,23 @@ function updateStats() {
   const tags = [...new Set(subjectCards.map(c => c.tag))];
   const grid = document.getElementById('statsGrid');
   if (!grid) return;
-  grid.innerHTML = '<div class="stat-card"><div class="num">' + total + '</div><div class="label">' + getSubject().name + ' 知识点</div></div><div class="stat-card"><div class="num">' + due + '</div><div class="label">待复习</div></div><div class="stat-card"><div class="num">' + mastered + '</div><div class="label">已掌握 (\u2265熟练)</div></div><div class="stat-card"><div class="num">' + (total > 0 ? Math.round(mastered/total*100) : 0) + '%</div><div class="label">掌握率</div></div>';
+  grid.innerHTML = '<div class="stat-card"><div class="num">' + total + '</div><div class="label">' + getSubject().name + ' 知识点</div></div><div class="stat-card"><div class="num">' + due + '</div><div class="label">待复习</div></div><div class="stat-card"><div class="num">' + mastered + '</div><div class="label">已掌握 (≥熟练)</div></div><div class="stat-card"><div class="num">' + (total > 0 ? Math.round(mastered/total*100) : 0) + '%</div><div class="label">掌握率</div></div>';
   const tagStats = document.getElementById('tagStats');
   if (tagStats) {
     tagStats.innerHTML = tags.length > 0
       ? tags.map(tag => {
           const tc = subjectCards.filter(c => c.tag === tag);
           const tm = tc.filter(c => c.level >= 3).length;
-          return '<div class="tag-stat"><span>' + tag + '</span><span>' + tc.length + '个\u00b7' + Math.round(tm/tc.length*100) + '%掌握</span></div>';
+          return '<div class="tag-stat"><span>' + tag + '</span><span>' + tc.length + '个·' + Math.round(tm/tc.length*100) + '%掌握</span></div>';
         }).join('')
       : '<div style="color:var(--text-light);font-size:14px">暂无分类数据</div>';
   }
 }
-
 function renderSubjectNav() {
   const nav = document.getElementById('subjectNav');
   if (!nav) return;
-  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn" data-id="' + s.id + '" onclick="switchSubject(\'' + s.id + '\')" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
+  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn" data-id="' + s.id + '" onclick="switchSubject(\' + s.id + \')" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
 }
-
 function renderAll() {
   renderSubjectNav();
   renderFilterSelects();
@@ -797,7 +695,6 @@ function renderAll() {
   updateStats();
   updateProgress();
 }
-
 function updateExamCountdown() {
   const el = document.getElementById('examCountdown');
   if (!el) return;
@@ -811,15 +708,12 @@ function updateExamCountdown() {
   else if (diff === 0) el.textContent = '考试就在今天！';
   else el.textContent = '距离 ' + examName + ' 还有 ' + diff + ' 天';
 }
-
 function openExamModal() {
   document.getElementById('examNameInput').value = localStorage.getItem(EXAM_KEY + '_name') || '期末考';
   document.getElementById('examDateInput').value = localStorage.getItem(EXAM_KEY + '_date') || '';
   document.getElementById('examModal').classList.add('show');
 }
-
 function closeExamModal() { document.getElementById('examModal').classList.remove('show'); }
-
 function saveExam() {
   const name = document.getElementById('examNameInput').value.trim() || '考试';
   const date = document.getElementById('examDateInput').value;
@@ -828,51 +722,41 @@ function saveExam() {
   closeExamModal();
   updateExamCountdown();
 }
-
 function openSubjectModal() {
   const list = document.getElementById('subjectManageList');
   if (!list) return;
-  list.innerHTML = SUBJECTS.map(s => '<div class="user-manage-item"><div class="info"><span style="font-weight:600">' + s.name + '</span><span style="color:' + s.color + ';font-size:13px">\u25cf ' + (getSubjectCards(s.id).length) + '个知识点</span></div></div>').join('');
+  list.innerHTML = SUBJECTS.map(s => '<div class="user-manage-item"><div class="info"><span style="font-weight:600">' + s.name + '</span><span style="color:' + s.color + ';font-size:13px">● ' + (getSubjectCards(s.id).length) + '个知识点</span></div></div>').join('');
   document.getElementById('subjectModal').classList.add('show');
 }
-
 function closeSubjectModal() { document.getElementById('subjectModal').classList.remove('show'); }
-
 function addSubject() {
   const nameInput = document.getElementById('newSubjectInput');
   if (!nameInput) return;
   const name = nameInput.value.trim();
   if (!name) return;
-  alert('学科删除功能尚未实现，请在 index.html 中直接修改主学科列表');
+  alert('学科管理功能有限，请直接在 index.html 中修改 SUBJECTS 数组');
   nameInput.value = '';
 }
-
 function resetToDefault() {
-  if (!confirm('重置所有知识点为初始状态？你的学习进度会丢失！')) return;
+  if (!confirm('重置所有知识点为初始状态？学习进度会丢失！')) return;
   cards = DEFAULT_KP.map(kp => ({ ...kp, level: 0, lastReview: new Date().toISOString() }));
   saveData();
   renderAll();
   alert('已恢复为默认知识点');
 }
-
 function escapeHtml(text) {
   const d = document.createElement('div');
   d.textContent = text;
   return d.innerHTML;
 }
-
 document.addEventListener('DOMContentLoaded', function() {
   const oldKeys = ['reviewUsers', 'reviewData_admin', 'reviewData_user1', 'reviewData_user2'];
   oldKeys.forEach(k => localStorage.removeItem(k));
-
   initData();
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('appPage').style.display = 'block';
   renderAll();
   updateExamCountdown();
 });
 
 </script>
-
 </body>
 </html>
