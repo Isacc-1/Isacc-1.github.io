@@ -638,7 +638,7 @@ function renderCardList() {
     return;
   }
   container.innerHTML = filtered.map(function(c){
-    return '<div class="card-item"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' \u00b7 ' + getCardLevelLabel(c.level) + '</div></div><div class="actions"><button class="edit-btn" onclick="openEditCardModal(\'' + c.id + '\')">\u270f\ufe0f</button><button class="del-btn" onclick="deleteCard(\'' + c.id + '\')">\u2715</button></div></div>';
+    return '<div class="card-item" data-card-id="' + c.id + '"><div><div class="q">' + escapeHtml(c.question) + '</div><div class="meta">#' + escapeHtml(c.tag) + ' \u00b7 ' + getCardLevelLabel(c.level) + '</div></div><div class="actions"><button class="edit-btn" data-action="edit">\u270f\ufe0f</button><button class="del-btn" data-action="delete">\u2715</button></div></div>';
   }).join('');
 }
 
@@ -686,7 +686,7 @@ function updateStats() {
 function renderSubjectNav() {
   const nav = document.getElementById('subjectNav');
   if (!nav) return;
-  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn" data-id="' + s.id + '" onclick="switchSubject(\' + s.id + \')" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
+  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn" data-subject="' + s.id + '" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
 }
 function renderAll() {
   renderSubjectNav();
@@ -749,6 +749,29 @@ function escapeHtml(text) {
   d.textContent = text;
   return d.innerHTML;
 }
+// Event delegation for card list actions
+document.getElementById('cardList').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  var item = btn.closest('.card-item');
+  if (!item) return;
+  var id = item.dataset.cardId;
+  if (!id) return;
+  if (btn.dataset.action === 'edit') {
+    openEditCardModal(id);
+  } else if (btn.dataset.action === 'delete') {
+    deleteCard(id);
+  }
+});
+
+// Subject nav event delegation
+document.getElementById('subjectNav').addEventListener('click', function(e) {
+  var btn = e.target.closest('.subject-btn');
+  if (!btn) return;
+  var sid = btn.dataset.subject;
+  if (sid) switchSubject(sid);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
   const oldKeys = ['reviewUsers', 'reviewData_admin', 'reviewData_user1', 'reviewData_user2'];
   oldKeys.forEach(k => localStorage.removeItem(k));
