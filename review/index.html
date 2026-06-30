@@ -107,17 +107,17 @@
   .progress-bar { height:6px; background:var(--border); border-radius:3px; margin:8px 0 16px; overflow:hidden; }
   .progress-bar .fill { height:100%; background:var(--primary); border-radius:3px; transition:width .3s; }
 
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; align-items:center; justify-content:center; padding:20px; }
-  .modal-overlay.show { display:flex; }
-  .modal { background:var(--card-bg); border-radius:16px; padding:24px; width:100%; max-width:400px; max-height:80vh; overflow-y:auto; }
-  .modal h3 { margin-bottom:12px; }
-  .modal input, .modal textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:8px; font-family:inherit; }
-  .modal textarea { resize:vertical; }
-  .modal .actions { display:flex; gap:8px; margin-top:12px; }
-  .modal .actions button { flex:1; padding:10px; border:none; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; }
-  .modal .actions .btn-cancel { background:var(--border); color:var(--text); }
-  .modal .actions .btn-confirm { background:var(--primary); color:white; }
-  .modal .actions .btn-danger { background:var(--danger); color:white; }
+  .modal[hidden] { display:none !important; }
+  .modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:200; align-items:center; justify-content:center; padding:20px; }
+  .modal.show { display:flex; }
+  .modal-content { background:var(--card-bg); border-radius:16px; padding:24px; width:100%; max-width:400px; max-height:80vh; overflow-y:auto; box-shadow:0 20px 50px rgba(15,23,42,.2); }
+  .modal-content h2 { font-size:20px; margin-bottom:16px; }
+  .modal-content label { display:block; margin:10px 0 4px; font-size:13px; color:var(--text-light); }
+  .modal-content input, .modal-content textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:8px; font-family:inherit; }
+  .modal-content textarea { resize:vertical; }
+  .modal-btn, .modal-close { flex:1; padding:10px; border:none; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; }
+  .modal-btn { background:var(--primary); color:white; }
+  .modal-close { background:var(--border); color:var(--text); }
 
   .import-export { display:flex; gap:8px; margin:12px 0; }
   .import-export button { flex:1; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--card-bg); font-size:13px; cursor:pointer; color:var(--text); }
@@ -191,7 +191,7 @@
   </div>
 </div>
 </div>
-<div class="modal" id="examModal">
+<div class="modal" id="examModal" hidden>
   <div class="modal-content">
     <h2>📅 设置考试</h2>
     <form onsubmit="saveExam();return false">
@@ -206,7 +206,7 @@
     </form>
   </div>
 </div>
-<div class="modal" id="editCardModal">
+<div class="modal" id="editCardModal" hidden>
   <div class="modal-content">
     <h2>✏️ 编辑知识点</h2>
     <form onsubmit="saveEditedCard();return false">
@@ -223,7 +223,7 @@
     </form>
   </div>
 </div>
-<div class="modal" id="subjectModal">
+<div class="modal" id="subjectModal" hidden>
   <div class="modal-content">
     <h2>📚 学科列表</h2>
     <div id="subjectManageList"></div>
@@ -533,7 +533,7 @@ function switchTab(tabName) {
 function switchSubject(sid) {
   currentSubject = sid;
   document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector('.subject-btn[data-id="' + sid + '"]');
+  const btn = document.querySelector('.subject-btn[data-subject="' + sid + '"]');
   if (btn) btn.classList.add('active');
   renderFilterSelects();
   const visibleTab = document.querySelector('.tab-content[style*="block"]');
@@ -611,9 +611,9 @@ function openEditCardModal(id) {
   document.getElementById('editQInput').value = card.question;
   document.getElementById('editAInput').value = card.answer;
   document.getElementById('editTagInput').value = card.tag || '';
-  document.getElementById('editCardModal').classList.add('show');
+  showModal('editCardModal');
 }
-function closeEditCardModal() { document.getElementById('editCardModal').classList.remove('show'); editingCardId = null; }
+function closeEditCardModal() { hideModal('editCardModal'); editingCardId = null; }
 function saveEditedCard() {
   if (!editingCardId) return;
   const card = cards.find(c => c.id === editingCardId);
@@ -686,7 +686,7 @@ function updateStats() {
 function renderSubjectNav() {
   const nav = document.getElementById('subjectNav');
   if (!nav) return;
-  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn" data-subject="' + s.id + '" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+'20;color:'+s.color: '') + '">' + s.name + '</button>').join('');
+  nav.innerHTML = SUBJECTS.map(s => '<button class="subject-btn' + (s.id===currentSubject?' active':'') + '" data-subject="' + s.id + '" style="' + (s.id===currentSubject?'border-color:'+s.color+';background:'+s.color+';color:white': '') + '">' + s.name + '</button>').join('');
 }
 function renderAll() {
   renderSubjectNav();
@@ -697,23 +697,36 @@ function renderAll() {
 }
 function updateExamCountdown() {
   const el = document.getElementById('examCountdown');
-  if (!el) return;
-  const now = new Date();
+  const nameEl = document.getElementById('examNameDisplay');
+  const daysEl = document.getElementById('daysDisplay');
+  const dateEl = document.getElementById('examDateDisplay');
+  if (!el || !nameEl || !daysEl || !dateEl) return;
   const examDate = localStorage.getItem(EXAM_KEY + '_date');
   const examName = localStorage.getItem(EXAM_KEY + '_name') || '期末考';
-  if (!examDate) { el.textContent = '请设置考试日期'; return; }
-  const exam = new Date(examDate);
-  const diff = Math.ceil((exam - now) / (1000*60*60*24));
-  if (diff < 0) el.textContent = '考试已结束';
-  else if (diff === 0) el.textContent = '考试就在今天！';
+  if (!examDate) {
+    el.textContent = '请设置考试日期';
+    nameEl.textContent = '📖 设置考试';
+    daysEl.textContent = '--';
+    dateEl.textContent = '';
+    return;
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exam = new Date(examDate + 'T00:00:00');
+  const diff = Math.round((exam - today) / (1000*60*60*24));
+  nameEl.textContent = '📖 ' + examName;
+  daysEl.textContent = diff < 0 ? '0' : diff;
+  dateEl.textContent = exam.toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' });
+  if (diff < 0) el.textContent = examName + ' 已结束';
+  else if (diff === 0) el.textContent = examName + ' 就在今天！';
   else el.textContent = '距离 ' + examName + ' 还有 ' + diff + ' 天';
 }
 function openExamModal() {
   document.getElementById('examNameInput').value = localStorage.getItem(EXAM_KEY + '_name') || '期末考';
   document.getElementById('examDateInput').value = localStorage.getItem(EXAM_KEY + '_date') || '';
-  document.getElementById('examModal').classList.add('show');
+  showModal('examModal');
 }
-function closeExamModal() { document.getElementById('examModal').classList.remove('show'); }
+function closeExamModal() { hideModal('examModal'); }
 function saveExam() {
   const name = document.getElementById('examNameInput').value.trim() || '考试';
   const date = document.getElementById('examDateInput').value;
@@ -726,9 +739,21 @@ function openSubjectModal() {
   const list = document.getElementById('subjectManageList');
   if (!list) return;
   list.innerHTML = SUBJECTS.map(s => '<div class="user-manage-item"><div class="info"><span style="font-weight:600">' + s.name + '</span><span style="color:' + s.color + ';font-size:13px">● ' + (getSubjectCards(s.id).length) + '个知识点</span></div></div>').join('');
-  document.getElementById('subjectModal').classList.add('show');
+  showModal('subjectModal');
 }
-function closeSubjectModal() { document.getElementById('subjectModal').classList.remove('show'); }
+function closeSubjectModal() { hideModal('subjectModal'); }
+function showModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.hidden = false;
+  modal.classList.add('show');
+}
+function hideModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.hidden = true;
+}
 function addSubject() {
   const nameInput = document.getElementById('newSubjectInput');
   if (!nameInput) return;
