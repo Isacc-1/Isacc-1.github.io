@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知识点复习 · Isaac1</title>
+<title>背东西 · Isaac1</title>
 <style>
 
   :root {
-    --primary: #4f46e5;
-    --primary-light: #818cf8;
-    --bg: #f8fafc;
+    --primary: #e8590c;
+    --primary-light: #ff922b;
+    --bg: #fff9ec;
     --card-bg: #ffffff;
-    --text: #1e293b;
-    --text-light: #64748b;
-    --border: #e2e8f0;
-    --danger: #ef4444;
-    --success: #22c55e;
-    --warning: #f59e0b;
+    --text: #2d1b00;
+    --text-light: #8c6f4a;
+    --border: #f0dcc0;
+    --danger: #e03131;
+    --success: #2f9e44;
+    --warning: #f08c00;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -29,7 +29,7 @@
 
   .app-page { display:none; }
 
-  .header { background: var(--primary); color: white; padding: 12px 16px; text-align: center; position: sticky; top:0; z-index:100; }
+  .header { background: var(--primary); color: white; padding: 12px 16px; text-align: center; position: sticky; top:0; z-index:100; border-bottom:3px solid var(--primary-light); }
   .header-row { display:flex; align-items:center; justify-content:center; gap:10px; }
   .header h1 { font-size: 20px; margin-bottom: 2px; }
   .header .subtitle { font-size: 13px; opacity: .85; cursor:pointer; }
@@ -141,15 +141,15 @@
 <body>
 <div class="app-page" id="appPage">
 <div class="header">
-  <div class="header-row"><h1>📚 知识点复习</h1></div>
-  <div class="subtitle" id="examCountdown">按记忆曲线安排复习</div>
+  <div class="header-row"><h1>📚 背东西</h1></div>
+  <div class="subtitle" id="examCountdown">考前抱佛脚专用</div>
 </div>
 <div class="container">
   <div class="subject-nav" id="subjectNav"></div>
   <div class="countdown-box" id="countdownBox">
     <div class="exam-name" id="examNameDisplay">📖 设置考试</div>
     <div class="days" id="daysDisplay">--</div>
-    <div class="days-label">天后考试</div>
+    <div class="days-label">天</div>
     <div class="exam-date" id="examDateDisplay"></div>
     <button class="edit-btn" onclick="openExamModal()">✏️ 设置考试</button>
   </div>
@@ -161,13 +161,13 @@
   </div>
   <div class="tab-content" id="tabReview" style="display:block">
     <div class="filter-bar"><select id="reviewFilter"></select></div>
-    <div id="reviewArea"><div class="empty-state"><div class="emoji">🎉</div><p>暂无待复习知识点</p></div></div>
+    <div id="reviewArea"><div class="empty-state"><div class="emoji">🎉</div><p>今天没有要背的</p></div></div>
   </div>
   <div class="tab-content" id="tabManage">
     <div class="form-box" id="addFormBox">
       <h3>✏️ 手动添加知识点</h3>
       <form id="addForm" onsubmit="addCard(event)">
-        <label>知识点（问题/标题）</label>
+        <label>问题/标题</label>
         <textarea id="qInput" rows="2" placeholder="例如：TCP 三次握手的过程" required></textarea>
         <label>详细内容（答案）</label>
         <textarea id="aInput" rows="4" placeholder="详细写下你的理解..." required></textarea>
@@ -182,7 +182,7 @@
       <button onclick="openSubjectModal()">📚 学科</button>
       <button onclick="resetToDefault()">🔄 重置</button>
     </div>
-    <div class="card-list" id="cardList"><div class="empty-state"><p>暂无知识点</p></div></div>
+    <div class="card-list" id="cardList"><div class="empty-state"><p>什么也没有</p></div></div>
   </div>
   <div class="tab-content" id="tabStats">
     <div class="stats-grid" id="statsGrid"></div>
@@ -208,7 +208,7 @@
 </div>
 <div class="modal" id="editCardModal" hidden>
   <div class="modal-content">
-    <h2>✏️ 编辑知识点</h2>
+    <h2>✏️ 改一下</h2>
     <form onsubmit="saveEditedCard();return false">
       <label>问题</label>
       <textarea id="editQInput" rows="2" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;margin-bottom:12px;font-family:inherit;outline:none"></textarea>
@@ -547,7 +547,7 @@ function switchSubject(sid) {
 function startReview() {
   reviewQueue = getDueCards(); reviewIndex = 0; flipped = false;
   if (reviewQueue.length === 0) {
-    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">🎉</div><p>暂无待复习知识点</p></div>';
+    document.getElementById('reviewArea').innerHTML = '<div class="empty-state"><div class="emoji">🎉</div><p>今天没有要背的</p></div>';
     return;
   }
   showCard();
@@ -634,7 +634,7 @@ function renderCardList() {
   if (search) filtered = filtered.filter(function(c){ return c.question.toLowerCase().includes(search) || c.answer.toLowerCase().includes(search); });
   const container = document.getElementById('cardList');
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>暂无知识点</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>什么也没有</p></div>';
     return;
   }
   container.innerHTML = filtered.map(function(c){
@@ -671,7 +671,7 @@ function updateStats() {
   const tags = [...new Set(subjectCards.map(c => c.tag))];
   const grid = document.getElementById('statsGrid');
   if (!grid) return;
-  grid.innerHTML = '<div class="stat-card"><div class="num">' + total + '</div><div class="label">' + getSubject().name + ' 知识点</div></div><div class="stat-card"><div class="num">' + due + '</div><div class="label">待复习</div></div><div class="stat-card"><div class="num">' + mastered + '</div><div class="label">已掌握 (≥熟练)</div></div><div class="stat-card"><div class="num">' + (total > 0 ? Math.round(mastered/total*100) : 0) + '%</div><div class="label">掌握率</div></div>';
+  grid.innerHTML = '<div class="stat-card"><div class="num">' + total + '</div><div class="label">' + getSubject().name + ' 条</div></div><div class="stat-card"><div class="num">' + due + '</div><div class="label">待复习</div></div><div class="stat-card"><div class="num">' + mastered + '</div><div class="label">背熟了</div></div><div class="stat-card"><div class="num">' + (total > 0 ? Math.round(mastered/total*100) : 0) + '%</div><div class="label">完成度</div></div>';
   const tagStats = document.getElementById('tagStats');
   if (tagStats) {
     tagStats.innerHTML = tags.length > 0
@@ -680,7 +680,7 @@ function updateStats() {
           const tm = tc.filter(c => c.level >= 3).length;
           return '<div class="tag-stat"><span>' + tag + '</span><span>' + tc.length + '个·' + Math.round(tm/tc.length*100) + '%掌握</span></div>';
         }).join('')
-      : '<div style="color:var(--text-light);font-size:14px">暂无分类数据</div>';
+      : '<div style="color:var(--text-light);font-size:14px">还没有数据</div>';
   }
 }
 function renderSubjectNav() {
@@ -704,7 +704,7 @@ function updateExamCountdown() {
   const examDate = localStorage.getItem(EXAM_KEY + '_date');
   const examName = localStorage.getItem(EXAM_KEY + '_name') || '期末考';
   if (!examDate) {
-    el.textContent = '请设置考试日期';
+    el.textContent = '还没定日子';
     nameEl.textContent = '📖 设置考试';
     daysEl.textContent = '--';
     dateEl.textContent = '';
@@ -717,9 +717,9 @@ function updateExamCountdown() {
   nameEl.textContent = '📖 ' + examName;
   daysEl.textContent = diff < 0 ? '0' : diff;
   dateEl.textContent = exam.toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' });
-  if (diff < 0) el.textContent = examName + ' 已结束';
-  else if (diff === 0) el.textContent = examName + ' 就在今天！';
-  else el.textContent = '距离 ' + examName + ' 还有 ' + diff + ' 天';
+  if (diff < 0) el.textContent = '考完了 ✌️';
+  else if (diff === 0) el.textContent = '就是今天！！！';
+  else el.textContent = '还有 ' + diff + ' 天考 ' + examName;
 }
 function openExamModal() {
   document.getElementById('examNameInput').value = localStorage.getItem(EXAM_KEY + '_name') || '期末考';
